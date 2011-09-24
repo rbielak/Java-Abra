@@ -1,0 +1,138 @@
+<project name="abra" default="junit-compile" basedir="../../../..">
+	<!-- Load environment variables -->
+	<property environment="env"/>
+
+    <property name="ephman.src" value="org/ephman" />
+    <property name="junit.src" value="org/ephman/junit" />
+
+    <property name="outdir" value="${basedir}/classes"/>
+    <property name="libdir" value="${basedir}/lib"/>
+    <property name="srcdir" value="${basedir}/src"/>
+    <property name="docdir" value="${basedir}/doc/javadoc"/>
+
+	<property name="xmldir" value="${srcdir}/${junit.src}" />
+
+	<!-- JUnit targets -->
+	<path id="junit.classpath">
+		<pathelement path="${env.JUNIT_JAR}"/>
+		<pathelement path="${env.JDBC_JAR}"/>
+		<pathelement path="${env.XML_JAR}"/>
+		<pathelement path="${env.REGEXP_JAR}"/>
+		<pathelement path="${env.JCUP_JAR}"/>
+		<pathelement path="${env.ABRA_HOME}/lib/abra-tools.jar"/>
+		<pathelement path="${env.ABRA_HOME}/lib/abra-db.jar.jar"/>
+		<pathelement path="${outdir}"/>
+	</path>
+
+
+	<path id="abra.generation.classpath">
+		<pathelement path="lib/abra-tools.jar"/>
+		<pathelement path="${env.XML_JAR}"/>
+		<pathelement path="${env.REGEXP_JAR}"/>
+		<pathelement path="${env.JDBC_JAR}"/>
+		<pathelement path="${env.JCUP_JAR}"/>
+	</path>
+
+
+	<target name="junit-generate" description="Generate classes for Unit tests">
+		<!-- Remove generated code -->
+		<echo message="Removing generated code and schema"/>
+		<delete>	
+			<fileset dir="${srcdir}">
+				<include name="${junit.src}/generated/*.java"/>
+				<include name="${junit.src}/generated/*.sql"/>
+			</fileset>
+		</delete>
+                <mkdir dir="${srcdir}/${junit.src}/generated"/>
+		<!-- Generate code for the examples -->
+		<echo message="Generate Java code and schema"/>
+		<java classname="org.ephman.abra.tools.MapToJava" classpathref="abra.generation.classpath" 
+			fork="yes">
+			<!-- Output directory root for the generated java classes.
+			     Actual directory is determined by the package name in
+				 input XML file
+			-->
+			<arg line="-outdir"/>
+			<arg path="${srcdir}"/>
+			<!-- Schema file to generate -->
+			<arg line="-schema"/>
+			<arg path="${srcdir}/${junit.src}/generated/test.sql"/>
+			<!-- Generate abstract factory classes -->
+			<arg line="-factories"/>
+			<!-- Specify the class that extends all factories -->
+<!-- Stored procs not available for MySql -->
+<!--            <arg line="-procs"/> 
+			<arg line="DK"/> 
+-->
+<!--
+			<arg line="-xp"/>
+            -->
+
+			<!-- Input XML file that specifies what to generate -->
+			<arg path="${srcdir}/${junit.src}/test.xml"/>
+		</java>
+	<java classname="org.ephman.abra.tools.MapToJava" classpathref="abra.generation.classpath" 
+			fork="yes">
+			<!-- Output directory root for the generated java classes.
+			     Actual directory is determined by the package name in
+				 input XML file
+			-->
+			<arg line="-outdir"/>
+			<arg path="${srcdir}"/>
+			<!-- use Abra XmlParser if available -->
+			<!-- <arg line="-xp"/> -->
+			<!-- Input XML file that specifies what to generate -->
+			<arg path="${srcdir}/${junit.src}/books.xml"/>
+		</java>
+	</target>
+
+	<target name="junit-compile"  description="Compile Junit tests">
+        <javac classpathref="junit.classpath" destdir="${outdir}" srcdir="${srcdir}"
+				debug="on" deprecation="yes">
+            <include name="${junit.src}/**" />
+        </javac>
+	</target>
+
+	<target name="junit-run" depends="junit-compile" description="Run Junit tests">
+		<antcall target="run-with-props"/>
+		<antcall target="run-without-props"/>
+	</target>
+
+	
+
+<!-- run when no props entered -->
+	<target name="run-without-props" unless="db.props">
+        <java classpathref="junit.classpath" classname="org.ephman.junit.TestAll" fork="yes">
+			<jvmarg value="-Dxmldir=${xmldir}"/>
+			<jvmarg value="-Dabra.home=${env.ABRA_HOME}"/>			
+			
+			<!-- Test arguments go here -->
+			<jvmarg value="-Dhost=localhost"/>
+			<jvmarg value="-Ddatabase=test"/>
+			<jvmarg value="-Duser=scott"/>
+			<jvmarg value="-Dpassword=tiger"/>
+			<jvmarg value="-Dport=1701"/>
+		</java>
+	</target>
+
+	<target name="run-with-props" if="db.props">
+        <antcall target="testrunner">
+             <param name="test" value=""/>
+        </antcall>
+    </target>
+
+	<target name="testone" depends="junit-compile" description="Run one Junit test (requires -Dtest=&lt;test-name&gt;">
+		<antcall target="testrunner"/>
+    </target>
+
+    <target name="testrunner" depends="junit-compile" >
+        <java classpathref="junit.classpath" classname="org.ephman.junit.TestAll" fork="yes">
+			<!-- Test arguments go here -->
+			<jvmarg value="-Ddb.props=${db.props}"/>
+			<jvmarg value="-Dxmldir=${xmldir}"/>
+			<jvmarg value="-Dabra.home=${env.ABRA_HOME}"/>
+			<arg line="${test}"/>
+		</java>
+	</target>
+
+</project>

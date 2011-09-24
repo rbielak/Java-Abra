@@ -1,0 +1,110 @@
+<project name="abra" default="help">
+
+<!-- Load environment variables -->
+<property environment="env"/>
+
+    <property name="family.src" value="org/ephman/examples/family" />
+
+    <property name="outdir" value="${env.ABRA_HOME}/classes"/>
+    <property name="srcdir" value="${env.ABRA_HOME}/src"/>
+
+	<path id="abra.classpath">
+		<pathelement path="${env.JUNIT_JAR}"/>
+		<pathelement path="${env.JDBC_JAR}"/>
+		<pathelement path="${env.XML_JAR}"/>
+		<pathelement path="${env.REGEXP_JAR}"/>
+		<pathelement path="${env.JCUP_JAR}"/>
+		<pathelement path="${env.ABRA_HOME}/lib/abra-tools.jar"/>
+		<pathelement path="${env.ABRA_HOME}/lib/abra-db.jar"/>
+		<pathelement path="${outdir}"/>
+	</path>
+
+	<target name="feed-db-db2" description="feed the db for the family example (DB2)">
+		<antcall target="feed-db" >
+			<param name="dbUrl" value="jdbc:db2:${host}"/>
+			<param name="dbDriver" value="COM.ibm.db2.jdbc.app.DB2Driver"/>
+		</antcall>
+    </target>
+
+	<target name="feed-db" description="feed the db for the family example">
+		<antcall target="feed-file">
+			<param name="dbfile" value="family_cleanup.sql"/>
+		</antcall>
+		<antcall target="feed-file">
+			<param name="dbfile" value="family.sql"/>
+		</antcall>
+		<antcall target="feed-file">
+			<param name="dbfile" value="family_procs.sql"/>
+		</antcall>
+	</target>
+
+    <property name="dbDriver" value="oracle.jdbc.driver.OracleDriver" />
+    <property name="dbUrl" value="jdbc:oracle:thin:@${host}:1521:${host}"/>
+
+	<target name="feed-file">
+		<echo message="sqlplus ${user}/${pswd}@${host} ${dbfile}"/>
+			<sql driver="${dbDriver}"
+    			url="${dbUrl}" userid="${user}"  password="${pswd}"
+				classpathref="abra.classpath" onerror="continue">
+				<transaction src="${dbfile}"/>	
+    		</sql>
+<!--		<exec executable="sqlplus" failonerror="yes">
+			<arg line="${user}/${pswd}@${host}"/>
+			<arg line="${dbfile}"/>
+		</exec> -->
+	</target>
+
+	<!-- Build the tool needed to generate code and schema from XML configs -->
+	<target name="compile">
+        <javac classpathref="abra.classpath" destdir="${outdir}" srcdir="${srcdir}" debug="on">
+            <include name="${family.src}/**" />
+        </javac>
+	</target>
+
+<target name="have-gen">
+	<echo message="${family.src}/generated/Person.java"/>
+	<available property="have.gen" file="${env.ABRA_HOME}/src/${family.src}/generated/Person.java"/>
+</target>
+
+<property name="xmldir" value="${env.ABRA_HOME}/src/org/ephman/junit"/>
+
+<!-- target to copy, compile (assuming 'dbname' is set) --> 
+   <target name="run" depends="have-gen, re-generate, compile">
+		<java classpathref="abra.classpath" classname="org.ephman.examples.family.Test" fork="yes">
+			<jvmarg value="-Ddb.props=${db.props}"/>
+			<jvmarg value="-Dxmldir=${xmldir}"/>
+		</java>
+   </target>
+
+<target name="generate">
+	<antcall target="re-generate"/>
+</target>
+
+<target name="re-generate" unless="have.gen">
+	<echo message="${have.gen}"/>
+        <mkdir dir="${srcdir}/${family.src}/generated"/>
+	<java classpathref="abra.classpath"
+		classname="org.ephman.abra.tools.MapToJava" fork="yes" >
+		<arg value="-outdir"/>
+		<arg value="${env.ABRA_HOME}/src"/>
+		<arg value="-factories"/>
+		<arg value="-xp"/>
+
+
+	<arg value="-validation"/> 
+	<arg value="-verbose"/> 
+		<arg value="-schema"/>
+		<arg value="${family.src}/family.sql"/>	
+		<arg value="family.xml"/>
+	</java>
+</target>
+
+    <target name="fresh">
+		<delete dir="${outdir}"/>
+		<mkdir dir="${outdir}"/>
+	</target>
+
+    <target name="help">
+      <echo message="generate | compile | run"/>
+    </target>
+</project>

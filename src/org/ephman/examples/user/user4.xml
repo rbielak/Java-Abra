@@ -1,0 +1,77 @@
+<mapping>
+
+<!-- property nodes can be used to define common variables like
+packages and regular expressions -->
+  <property name="user.pkg" value="org.ephman.examples.user.generated"/>
+
+  <property name="alphanum" value="[a-zA-Z0-9]"/>
+  <property name="id.regex" value="${alphanum}{6}${alphanum}*"/>
+  <property name="id.code" value="1"/>
+
+ <class name="${user.pkg}.User"
+          identity="oid">
+    <description>This class represents a User</description>
+    <map-to table="example_user"/>
+
+    <field name="oid" type="integer">
+      <sql name="user_oid"/>
+    </field>
+    <field name="userId" type="string" len="32" required="true">
+      <sql name="user_id"/>
+      <validate regex="${id.regex}" code="${id.code}"
+         name="BadUserID"/>
+    </field>
+    <field name="userName" type="string" len="80">
+      <sql name="user_name"/>
+      <validate required="true"/>
+    </field>
+    <field name="age" type="integer">
+      <sql name="user_age" constraint=">=0"
+          constraint-name="user_age_ge_zero"/>
+    </field>
+    <field name="company"
+          type="${user.pkg}.Company">
+       <sql name="company_oid" constraint-name="user_company_exists"/>
+    </field>
+    <field name="groups" type="${user.pkg}.Group" collection="vector"/>
+  </class>
+
+  <class name="${user.pkg}.Company" identity="oid">
+    <map-to table="example_company"/>
+
+    <field name="oid" type="integer">
+      <sql name="comp_oid"/>
+    </field>
+    <field name="companyName" type="string" len="32">
+      <sql name="comp_name"/>
+    </field>
+    <field name="webUrl" type="string" len="64">
+      <sql name="comp_url"/>
+    </field>
+
+  </class>
+
+  <class name="${user.pkg}.Group" identity="oid">
+    <map-to table="example_group"/>
+    <field name="oid" type="integer">
+      <sql name="grp_oid"/>
+    </field>
+    <field name="name" type="string" len="32">
+      <sql name="grp_name"/>
+    </field>
+    <field name="members" type="${user.pkg}.User" collection="vector"/>
+  </class>
+
+<!-- define the many-to-many relationship between users and groups -->
+  <class name="${user.pkg}.UserToGroup" many-to-many="true"
+       factory-ext="ManyToManyFactoryBase">
+     <map-to table="example_user_to_grp"/>
+     <field name="user" type="${user.pkg}.User">
+       <sql name="u2g_user_oid"/>
+     </field>
+     <field name="group" type="${user.pkg}.Group">
+       <sql name="u2g_group_oid"/>
+     </field>
+  </class> 
+
+</mapping>

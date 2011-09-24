@@ -1,0 +1,58 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Language" content="en-us">
+<title>Abra User Manual</title>
+</head>
+
+<body>
+
+<h2><a name="property">Xml</a></h2>
+<h3>Description</h3>
+<p>Define a field in xml, whether it is an element or attribute, or not marshalled at all.</p>
+
+<h3>Parameters</h3>
+<table border="1" cellpadding="2" cellspacing="0">
+  <tr>
+    <td valign="top"><b>Attribute</b></td>
+    <td valign="top"><b>Description</b></td>
+    <td align="center" valign="top"><b>Required</b></td>
+  </tr>
+  <tr>
+    <td valign="top">node</td>
+    <td valign="top">values ("attribute"|"element")</td>
+    <td valign="top" align="center">No, defaults to "element"</td>
+  </tr>
+  <tr>
+    <td valign="top">marshal</td>
+    <td valign="top">boolean whether this field should be part of xml version 
+of this class.</td>
+    <td valign="middle" align="center" rowspan="3">No, defaults to true</td>
+  </tr>
+</table>
+<h3>Parameters specified as nested elements</h3>
+<h4>NONE</h4>
+<h3>Examples</h3>
+
+<pre>  
+&lt;field name=&quot;name&quot; type="string" &gt;
+   &lt;xml node="attribute"  / &gt;
+&lt;/field &gt;
+</pre>
+This will cause class Foo to be marshalled as 
+<pre>&lt;Foo name="John" /&gt;</pre>
+whereas no &lt;xml&gt; node would result in
+<pre>
+&lt;Foo &gt;
+  &lt;name &gt;
+    John
+  &lt;/name &gt;
+&lt;/Foo &gt;
+</pre>
+<hr>
+<p align="center">Copyright &copy; 2000,2001,2002 Paul Bethe and Richie Bielak. 
+All rights
+Reserved.</p>
+</body>
+</html>
+

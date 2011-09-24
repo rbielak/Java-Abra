@@ -1,0 +1,94 @@
+package org.ephman.xml.dtd;
+
+import java_cup.runtime.*;
+import java.util.Vector;
+import java.util.HashMap;
+import java.io.Reader;
+
+parser code {:
+	public DtdParser (Reader r) {
+		this (new Yylex (r));		
+	}
+
+	public Dtd parseDtd () throws Exception {
+		Symbol s = this.parse ();
+		Dtd result = (Dtd)s.value;
+		((Yylex)getScanner()).close ();
+		return result;
+	}
+
+:};
+
+action code {: 
+
+	public void parseError (String str, Object o, int line) throws Exception {
+		
+		
+		Exception e = new DtdException (str, line);
+//		e.printStackTrace ();
+		parser.done_parsing (); //report_fatal_error (str + " line=" + line, o);
+		throw e;
+	}
+
+:};
+
+terminal LBRACK, RBRACK, SLASH, EQUALS; // symbols..
+terminal QUOTED_NAME, NAME, TEXT, NAME_SYMBOL, OR_BAR, ANY, EMPTY;
+terminal LPAREN, RPAREN, COMMA, PCDATA, CDATA, FIXED, SYNTAX, ELEMENT, ATTLIST;
+
+terminal UNCLOSED; // error terminals..
+
+non terminal Dtd dtd, error_node;
+// non terminal rbrack_opt;
+non terminal String name, quoted_name, text; // names and "quoted names"
+non terminal DtdElement dtd_element;
+non terminal DtdAttList attList;
+non terminal Object node;
+non terminal Vector name_list, node_list, list_node;
+// non terminal name_sep;
+
+start with dtd;
+
+dtd ::=  node_list:nl
+	{: RESULT = new Dtd (); RESULT.docTypeString = "<?xml foo=\"bar\" ?>"; RESULT.everything = nl; :}
+	;
+
+node_list ::= node_list:nl node:n {: nl.addElement (n); RESULT=nl; :}
+	| node:n {: RESULT= new Vector (); RESULT.addElement (n); :}
+	;
+
+node ::= attList:a {: RESULT = a; :}
+	| dtd_element:e {: RESULT=e; :}
+	;
+
+attList ::= ATTLIST name:n SYNTAX CDATA FIXED quoted_name:qn RBRACK
+	{: RESULT = new DtdAttList (n, qn); :}
+	;
+
+dtd_element ::= ELEMENT name:n LPAREN PCDATA RPAREN RBRACK 
+	{: RESULT = new DtdElement (n); :}
+   	| ELEMENT name:n ANY RBRACK
+	{: RESULT = new DtdElement (n); :}
+	| ELEMENT name:n EMPTY RBRACK
+	{: RESULT = new DtdElement (n); :}
+	|  ELEMENT name:n LPAREN name_list:nl RPAREN RBRACK
+	{: RESULT = new DtdElement (n, nl); :}
+	;
+// name_list:nl name_sep name:n {: RESULT = nl; nl.add (n); :}
+name_list ::= name_list:nl COMMA list_node:n {: RESULT = nl; nl.addAll (n); :}		| name_list:nl OR_BAR list_node:n {: RESULT = nl; nl.addAll (n); :}	
+	| list_node:ln {: RESULT = ln; :}
+	;
+
+list_node ::= LPAREN name_list:nl RPAREN {: RESULT= nl; :}
+	|	name:n {: RESULT = new Vector (); RESULT.add (n); :}
+	;
+
+name ::= NAME:n {: RESULT = (String)n; :}	
+	| NAME_SYMBOL:ns {: RESULT = (String)ns; :}
+	;
+
+text ::= TEXT:n {: RESULT = (String)n; :}
+	;
+
+quoted_name ::= QUOTED_NAME:n {: RESULT = (String)n; :}
+	;

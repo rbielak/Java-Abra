@@ -1,0 +1,94 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Language" content="en-us">
+<title>Abra User Manual</title>
+</head>
+
+<body>
+
+<h2><a name="property">Abra ant task</a></h2>
+<h3>Description</h3>
+<p>Defines an abra task to run under ant (in a buildfile).
+first define the task with 
+<pre>&lt;taskdef name=&quot;abra&quot; classname=&quot;org.ephman.abra.ant.AbraTask&quot;/&gt;
+</pre></p>
+<p>Then define an abra task as follows.</p>
+<h3>Parameters</h3>
+<table border="1" cellpadding="2" cellspacing="0">
+  <tr>
+    <td valign="top"><b>Attribute</b></td>
+    <td valign="top"><b>Description</b></td>
+    <td valign="top"><b>Value Type</b></td>
+    <td align="center" valign="top"><b>Required</b></td>
+  </tr>
+<tr>
+    <td valign="top">classpathref</td>
+    <td valign="top">the classpath to use which contains abra-tools</td>
+    <td valign="top">Reference</td>
+    <td valign="top" align="center">No (defaults to $CLASSPATH)</td>
+  </tr>
+  <tr>
+    <td valign="top">outdir</td>
+    <td valign="top">the directory to generate code into</td>
+    <td valign="top">String</td>
+    <td valign="top" align="center">No (defaults to $PWD)</td>
+  </tr>
+  <tr>
+    <td valign="top">noClasses</td>
+    <td valign="top">turn off class generation</td>
+    <td valign="top">boolean (true,yes,on = true; anything else = false)</td>
+    <td valign="middle" align="center" >No (defaults to false)</td>
+  </tr>
+  <tr>
+    <td valign="top">factories</td>
+    <td valign="top">generate factories to go from object to sql database.</td>
+    <td valign="top">boolean</td>
+    <td valign="middle" align="center" >No (defaults to false)</td>
+  </tr>
+  <tr>
+    <td valign="top">validation</td>
+    <td valign="top">turn on validator generation</td>
+    <td valign="top">boolean</td>
+    <td valign="middle" align="center" >No (defaults to false)</td>
+  </tr>
+  <tr>
+    <td valign="top">schema</td>
+    <td valign="top">generate schema; use the argument as the schema file to generate in path is relative to outdir attribute</td>
+    <td valign="top">String</td>
+    <td valign="middle" align="center" >No</td>
+  </tr>
+  <tr>
+    <td valign="top">abraXmlParser</td>
+    <td valign="top">whether to use the abra xml parser (defaults to false : using Xerces).</td>
+    <td valign="top">boolean</td>
+    <td valign="middle" align="center" >No </td>
+  </tr>
+  <tr>
+    <td valign="top">procs</td>
+    <td valign="top">whether to use stored procedures if 'true' then use if other value use that for package name (if the db supports packaging).</td>
+    <td valign="top">String</td>
+    <td valign="middle" align="center" >No (defaults to false)</td>
+  </tr>
+  <tr>
+    <td valign="top">debugLevel</td>
+    <td valign="top">How much should be printed about what is going on</td>
+    <td valign="top">(mega | verbose | short | supress)</td>
+    <td valign="middle" align="center" >No (defaults to short) </td>
+  </tr>
+</table>
+<h3>Parameters specified as nested elements</h3>
+<h4>NONE</h4>
+<h3>Examples</h3>
+<pre>  &lt;abra  classpathref=&quot;abra.classpath&quot; outdir=&quot;${basedir}/java&quot; 
+         debugLevel=&quot;verbose&quot; 
+	 schema=&quot;generated/family.sql&quot; abraXmlParser=&quot;true&quot;&gt;
+		  &lt;include name=&quot;f*.xml&quot;/&gt;
+  &lt;/abra&gt;
+</pre>
+<hr>
+<p align="center">Copyright &copy; 2000,2001,2002 Paul Bethe and Richie Bielak. All rights
+Reserved.</p>
+</body>
+</html>
+

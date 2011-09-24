@@ -1,0 +1,9 @@
+# props file for running tests..
+#substitute the appropriate parameters and 
+# pass to junit-run as -Ddb.props=$PWD/<this-file>
+
+database=test
+host=localhost
+user=scott
+password=tiger
+port=5432

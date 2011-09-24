@@ -1,0 +1,14 @@
+<!-- this is a wrapper class non DB so that some books, authors, etc. can be fed for tests -->
+
+<mapping>
+
+<property name="pkg" value="org.ephman.junit"/>
+
+<class name="${pkg}.generated.Catalog" >
+	<field name="authors" type="${pkg}.generated.Author" collection="vector" />
+	<field name="publishers" type="${pkg}.generated.Publisher" collection="vector"/>
+	<field name="books" type="${pkg}.generated.Book" collection="vector"/>
+</class>
+
+</mapping>
+

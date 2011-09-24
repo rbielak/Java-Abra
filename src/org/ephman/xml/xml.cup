@@ -1,0 +1,110 @@
+package org.ephman.xml;
+
+import java_cup.runtime.*;
+import java.util.Vector;
+import java.util.HashMap;
+import java.io.Reader;
+
+parser code {:
+	public AbraXmlParser (Reader r) {
+		this (new Yylex (r));		
+	}
+
+	public XmlNode parseXml () throws Exception {
+		Symbol s = this.parse ();
+		XmlNode result = (XmlNode)s.value;
+		((Yylex)getScanner()).close ();
+		return result;
+	}
+
+:};
+
+action code {: 
+	public void checkName (String n, String e, int line) throws XmlException {
+		if (!n.equals (e)) 
+			throw new XmlException ("Node " + n + " expects </" + n + ">" 
+						+ " not " + e, line);
+	}
+
+	public void parseError (String str, Object o, int line) throws Exception {
+		
+		
+		Exception e = new XmlException (str, line);
+//		e.printStackTrace ();
+		parser.done_parsing (); //report_fatal_error (str + " line=" + line, o);
+		throw e;
+	}
+
+:};
+
+terminal LBRACK, RBRACK, SLASH, EQUALS; // symbols..
+terminal QUOTED_NAME, NAME, TEXT, LBRACK_NAME, LBRACK_SLASH_NAME;
+
+terminal UNCLOSED; // error terminals..
+
+non terminal AbraXmlNode node, error_node;
+// non terminal rbrack_opt;
+non terminal Vector attr_list, attr_list_opt, node_list;
+non terminal XmlAttribute attribute;
+non terminal String lbsl_name, lb_name, name, quoted_name, text; // names and "quoted names"
+
+start with node;
+
+node ::= lb_name:n attr_list_opt:al SLASH RBRACK
+	{: RESULT = new AbraXmlNode (n, al); :}
+	| lb_name:n attr_list_opt:al RBRACK text:t lbsl_name:end RBRACK
+	{: checkName (n, end, endleft); RESULT=new AbraXmlNode (n, al); RESULT.setText (t);:}
+	| lb_name:n attr_list_opt:al RBRACK lbsl_name:end RBRACK
+	{: checkName (n, end, endleft); 
+	RESULT=new AbraXmlNode (n, al); RESULT.setList (new Vector ());:}		
+	| lb_name:n attr_list_opt:al RBRACK node_list:nl lbsl_name:end RBRACK
+	{: checkName (n, end, endleft);
+	RESULT=new AbraXmlNode (n, al); RESULT.setList (nl); :}
+ 	| error_node:e {: RESULT=new AbraXmlNode ("ERROR", null); :}
+	| error:e {: parseError ("unparseable ", null,eleft); :}
+	;
+
+/*
+rbrack_opt ::= RBRACK
+	|   {: parseError ("Node must end with '>'", null,((java_cup.runtime.Symbol)CUP$XmlParser$stack.elementAt(CUP$XmlParser$top-0)).right);  :}
+	;
+*/
+
+error_node ::= lb_name:n attr_list_opt:al node_list:nl lbsl_name:end RBRACK
+	{: parseError ("Node " + n + " must end with '>'", n, nleft);  :}
+/*	| LBRACK error:e RBRACK
+	{: parseError ("Node error", e, eleft);  :}
+	| error:e	
+	{: parseError ("Unparseable node ", e, eleft);:} */
+	;
+
+
+
+node_list ::= node_list:nl node:n {: nl.addElement (n); RESULT=nl; :}
+	| node:n {: RESULT= new Vector (); RESULT.addElement (n); :}
+	;
+
+attr_list_opt ::= {: RESULT= null; :}
+	| attr_list:al {: RESULT = al; :}
+	;
+
+attr_list ::= attr_list:al attribute:a {: RESULT = al; al.add (a); :}
+	|	attribute:a {: RESULT = new Vector (); RESULT.add (a); :}
+	;
+
+attribute ::= name:n EQUALS quoted_name:v {: RESULT = new XmlAttribute (n,v); :}
+	;
+
+name ::= NAME:n {: RESULT = (String)n; :}
+	;
+lb_name ::= LBRACK_NAME:n {: RESULT = (String)n; :}
+	;
+lbsl_name ::= LBRACK_SLASH_NAME:n {: RESULT = (String)n; :}
+	;
+
+text ::= TEXT:n text:t {: RESULT = (String)n + t; :}
+ | TEXT:n {: RESULT = (String)n; :}
+	;
+
+quoted_name ::= QUOTED_NAME:n {: RESULT = (String)n; :}
+	;

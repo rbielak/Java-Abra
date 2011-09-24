@@ -1,0 +1,23 @@
+oracle and postgres should work
+
+'family' example has simple schema
+'junit' example has simple schema
+'javadoc' option in build file
+
+all:
+   TODO: building complex queries with views inside views..
+
+postgres:
+   DONE!: add foreign keys to SchemaGenerator
+   DONE: figure out stored procedures
+
+oracle:
+  -nothing at this time
+
+db2-UDB:
+	-added 2002-2-14 (V7.1 and newer)
+	-TODO: add stored procedure
+
+db2: (db2/400)
+	-add KeyService to generate oids
+	-general testing

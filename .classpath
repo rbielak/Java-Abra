@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry excluding="org/ephman/abra/ant/|org/ephman/abra/database/db2-UDB/|org/ephman/abra/database/db2/|org/ephman/abra/database/mysql/|org/ephman/abra/database/oracle/|org/ephman/abra/database/postgresql/|org/ephman/abra/database/sybase/|org/ephman/abra/tools/db2-UDB/|org/ephman/abra/tools/db2/|org/ephman/abra/tools/mysql/|org/ephman/abra/tools/oracle/|org/ephman/abra/tools/postgresql/|org/ephman/abra/tools/sql/|org/ephman/abra/tools/sybase/|org/ephman/examples/|org/ephman/tests/" kind="src" path="src"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="/usr/local/java_libs/jakarta-regexp-1.2/jakarta-regexp-1.2.jar"/>
+	<classpathentry kind="lib" path="/usr/local/java_libs/java_cup/java_cup.jar"/>
+	<classpathentry kind="lib" path="/usr/local/java_libs/junit/junit.jar"/>
+	<classpathentry kind="lib" path="/home/apps/ms-sqlserver/lib/msutil.jar"/>
+	<classpathentry kind="lib" path="/home/apps/ms-sqlserver/lib/msbase.jar"/>
+	<classpathentry kind="lib" path="/home/apps/ms-sqlserver/lib/mssqlserver.jar"/>
+	<classpathentry kind="output" path="classes"/>
+</classpath>

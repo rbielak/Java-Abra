@@ -1,0 +1,7 @@
+<foo>
+
+<property name="foo" value="42"/>
+<property name="bar" value="none" />
+<property name="ok" value="why not" />
+
+</foo>

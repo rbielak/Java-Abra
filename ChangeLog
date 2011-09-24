@@ -1,0 +1,245 @@
+2005-Jun-30 rbielak@acm.org
+	* Fixed Sybase schema generator. Index definitions and constrains were not generated.
+
+2005-Mar-21 rbielak@acm.org
+	* First cut of MS SQL Server support. Clobs of any kind not supported for now. Stored procs not supported either.
+	All unit tests run for SQL Server. Build with "ant sqlserver".
+
+	Note that the connect string needed for SQL Server has to contain the parameter "SelectMethod=Cursor", otherwise
+	the code that issues multiple selects in a single transaction will throw nasty exceptions.
+	
+	
+2004-Dec-22 rbielak@acm.org
+	* Updated Sybase support for ASE 12.x server. Testing done with ASE 12.0.
+	List of changes:
+		1. ephman/abra/database/GenericFactoryBase.java
+			Fixed a bug with statement being called twice. Sybase threw exception on
+			second close
+		2.org/ephman/abra/database/sybase/DatabaseConnector.java
+			Changed message names to say Sybase, instead of Oracle. Updated the URL creation.
+		3. org/ephman/abra/tools/GenericSchemaGenerator.java
+			Added new routine "getDbSpecificOptions() to allow Sybase add a "null" qualifier
+			on columns that are allowed to be null, but by default cannot be. For example "datetime"
+			and "int" types are not allowed to be null
+		4. src/org/ephman/abra/tools/mysql/SchemaGenerator.java
+			changed how primary column definition is written for dbs with auto-increment columns.
+		5.org/ephman/abra/tools/sybase/FactoryGenerator.java
+			updated for ASE 12.x
+		6. org/ephman/abra/tools/sybase/SchemaGenerator.java
+			changed how primary column is written. Syntax changed from old Sybase db. For ASE less
+			than 12.5 string of 255 or more are set to "text" type
+
+	There were bunch of tweaks to tests. Found that Sybase JDBC does not convert ints to strings if the comparison
+	column is varchar, but an integer is passed in the query. In TestTimings put code to skip stored proc based
+	tests - I don't need these for now.
+		
+	
+2004-Nov-29 rbielak@acm.org
+	* Added a SortAndLimitCriteris class to allow limits placed on the sizes if query results. The code had to be put into
+	a class that extends SortCriteria because SQL syntax for limit queries is different for Oracle, MySql and PostgreSql.
+	For Oracle it's just another where clause "where (rownum <= N)" but for MySql and PostgreSql it's a limit statement
+	at the end of the query "select ... where ... order by ... limit N". Current code will generate invalid SQL if the 
+	SortAndLimitCriteria is used without a filter.
+
+2004-Jun-30 rbielak@acm.org
+	* Inserted a patch to Marshaller contributed by Leo Tomilchik, to allow the reflective mashaller
+	handle Vectors and ArrayList.:
+2004-Apr-21 rbielak@acm.org
+	* Added "cancelQuery" to DatabaseSession. This will allow cancellation of a running query. The JDBC 
+	driver must support such things
+	
+2004-Mar-23 rbielak@acm.org
+	* Changed the implementation of DatabaseCursor to use an int array to hold internal result. This will save on the
+	amount of memory used by cursors. 
+	* Added a new unit test TestDBCursors.
+	
+2003-Dec-6 rbielak@acm.org
+	* Fixed a bug in MySql schema generation. Statements to create and drop indexes were not 
+	generated for MySql.
+
+2003-Nov-11 rbielak@acm.org
+	* Added support for query based factories. These factories allow you to treat a result from
+	a query as though is was a table. The most immediate application is to provide Abra
+	with access to joins. Take a look in the org.ephman.junit package for an example	
+	(TestQueryFactories test) and "test.xml" for XML extensions.
+
+
+2003-Oct-30 rbielak@acm.org
+	* Changed top level build.xml file to delete jar files from lib dir on clean.
+	* In GenericFactoryBase added an experimental routine to call stored procs (not
+	used anywhere else)
+	* In DatabaseConnector for MySql changed to use new driver name. See http://www.mysql.com/downloads/api-jdbc.html for reference
+	* Changes to support MySql better. Several types had to be overriden for schema
+	generation:
+        	1. If string is more than 255 characters, MySql type will be "text"
+	        2. Timestamp fields in MySql are "datetime"
+	        3. Numbers are of type "numeric"
+	Tested with MySql version 4.x
+
+2003-Sep-10 rbielak@acm.org
+	* With Paul fixed a bug in DatabaseCursor which caused exceptions when the last sections of the cursor were retrieved 
+	in chunks bigger than 90.
+2003-Jun-26 rbielak@acm.org
+	* Added a "storedProcCall" routine to GenericFactory base to allow factories implement actions
+	via stored procs. Useful when different databases have incompatible syntax for querying.
+	"storeProcCall" returns an integer from the proc
+2003-Jun-13 rbielak@acm.org
+	* Added rawCursorQuery to allow passing of SQL strings to Abra factories.
+	* Fixed a small bug in GenericFactoryBase. A getAll query would get a null 
+	exception, as there was no filter
+2003-Jun-11 pbethe@wso.williams.edu
+	* Added LimitQuery and SubSelectFilter 
+
+2003-Jun-06 richieb@netlabs.net
+	* Made sortExpressions gettable, so that SortCriterias can be combined
+2003-Apr-15 richieb@netlabs.net
+	* Added "setVector" back to JField, as DtdConvertor needs it.
+	
+2003-Apr-14 richieb@netlabs.net
+	* Changes to support ArrayList as a collection type. Added code to generator to generate proper
+	code when collection is set to ArrayList. JUnit test ran, but there is no specific test
+	for ArrayList yet. Not sure what to do about Array, as the array code was broken
+	to begin with.
+2003-Mar-9 richieb@netlabs.net
+	* Changed cleanup.sql file generation for Postgres to add "cascade" to drop table.
+2003-Feb-5  pbethe@wso.williams.edu
+	* many changes -- of note support for PSQL 7.3.1 (they renamed Connection)
+
+2002-Sept-12 pbethe@wso.williams.edu
+	* Added plugin-generator support documentation to follow
+	* Use the Validator generator as a pattern 
+
+2002-Sept-10 pbethe@wso.williams.edu
+	* Added support for native Classes (Integer, Character, Long, Double) 
+	* as Map-file types so that the idea of being 'un-set' or null
+		is propagated to and from the database
+
+2002-Sept-06 pbethe@wso.williams.edu
+	* Added Sybase support (connector, FactoryBase, and generators)
+	* Sybase junit tests work except Clob, and procs (to be implemented)
+2002-Jul-10 pbethe@wso.williams.edu
+	* Cleaned up ViewLookup creation procedure to do reflection in its constructor and throw a runtimeException if a problem so that Factories do not need to throw exception any more..
+	* Added AbraRuntimeException
+	* Fixed intializeFromView method to default to "deep" overlay
+	* Added TestAbraViews to verify above fix
+
+2002-Jun-27 pbethe@wso.williams.edu
+	* Stream lined build process not rely on CLASSPATH or scripts
+	but instead for ant to complain if any of ABRA_HOME,REGEXP_JAR,JDBC_JAR,XML_JAR
+	are not set.
+
+2002-Jun-13 pbethe@wso.williams.edu
+	* Marshaller - fixed bug where 'Versioned' objects where not getting version_number field into/from XML.  Added option to use Abra XML Parser instead of Xerces
+	* Fixed - xml parser to properly handle multi-line text elements..
+	* Updated SQL package (still working on diff-schema)
+	* Postgres support for CLOBs added (using LargeObject)
+	
+	
+2002-Mar-30 pbethe@wso.williams.edu
+	* Fixed bug in order that field are build in 'AllFields' vector.
+2002-Feb-22 pbethe@wso.williams.edu
+	* Added MySql support for Abra 'mysql' target using
+	mmmysql-jdbc driver..
+
+2002-Feb-21 pbethe@wso.williams.edu
+	* Required="true" added to the <validate ../> node so 
+	that if a required field is missing the object can still be stored
+	(NOT NULL constraint)
+
+2002-Feb-18 pbethe@wso.williams.edu
+	* Postgres support for stored procedures added.
+	* ResourceBundle style error messages ripped out into org/ephman/error.properties
+	* Junit tests from 0.8 added to 0.9
+	* TestTiming added to test insert in stored proc vs Dyn SQL
+
+2002-Feb-15 pbethe@wso.williams.edu
+	* Postgres support for foreign keys, and check constraints added.
+
+2002-Feb-14 pbethe@wso.williams.edu
+	* Abstracted to db2-UDB the changes I made and added ant target
+	* Succesful runs of family example using ant-db2-UDB.jar on PC/Linux 
+	UDB Build
+
+2002-Feb-14 pbethe@wso.williams.edu
+	* Added some db2 support found out that UDB and DB2/400 are
+	different - will abstract to two builds..
+	
+2002-Feb-8 pbethe@wso.williams.edu
+	* Abstracted some of the generator stuff to allow for DB2
+	* Created new db2 directory in abra/tools and abra/database and copied basic files
+	* Added 'ant' target to build abra-db2.jar
+	
+2002-Feb-6 pbethe@wso.williams.edu
+	* Added StringFieldError class to the validation package allowing reflective changes to fix any 
+	validation errors
+	* Fixes to minor bugs in some generators.
+	
+2002-Jan-16 richieb@netlabs.net
+	* Starting a new branch Abra-0.9 to experiment with different
+	method of representing object references in the database. We need
+	to keep type info and relationship between types in the database.
+
+2002-Jan-14 pbethe@wso.williams.edu
+	* added int errorCode to FieldError and ValidationCodes for basic errors
+
+2002-Jan-8 pbethe@wso.williams.edu
+	* added FieldError to validation package so that the field name is preserved
+	* added in-line object storage (and doc)
+
+2001-Dec-21 richieb@netlabs.net and pbethe@wso.williams.edu
+	* Fixed the XmlProcessor class to load Abra parser at runtime. This
+	  removes the dependency on Java Cup when running the mapping/code
+	  generation tool. By default Xerces parser is used.
+
+2001-Dec-12 pbethe@wso.williams.edu
+	* added org.ephman.xml package with Java CUP generated Xml parser
+	  allow plug in of this one to MapToJava using '-xp' flag
+	* added validator generation '-validation' using required,lengths, 
+	  and <validate regex="a*"/> node inside <field>
+	* added hand-written descendants 'descendant' attribute in <class> node
+	  allows inheritence of generated data classes, lets factories create the
+	  right type.
+	* added ant-style <property name="foo" value="42"/> nodes with later 
+	  replacement ${foo} for 42
+	* added stored-procedures using generic JDBC to FactoryBase and generated Factories
+	  added to Oracle SchemaGenerator  (not yet part of PSQL)
+	* requires jakarta regexp package see BUILD file
+	
+2001-Oct-05 richieb@netlabs.net
+	* build.xml - modified to build the example. Include code generation
+	and schema generation steps.
+	* MapToJava.java - turned off XML parser validation. Xerces was spitting
+	out lots of messages because we don't have a DTD for the map files.
+	* TODO - perhaps which database is being used should be determined from
+	an environment variable. Otherwise the build scripts have to have 
+	database specific thingies (eg. in examples running code generation
+	and in setting of classpaths). 
+	
+
+2001-Sep-01 richieb@netlabs.net
+
+	* Added family example in the org.examples package.
+	* Changed to use Postgres 7.1. Previous JDBC drivers
+	  had bugs with Timestamps and Dates. 7.1 works fine.
+	  Note that Postgres 7.1 driver requires Java 1.3.
+	
+2001-Aug-27 richieb@netlabs.net
+
+	* Revamped build files a little so that externaly defined environment
+	variables are used. Changed things so that XML parser and Ant jar files
+	need not be included in the distribution.
+
+2001-Aug-25 richieb@netlabs.net
+	
+	* Example does not work with PostgreSql. THere is a problem with
+	retrieving Dates and Timestamps in 6.5 JDBC driver.
+	* TODO: Examples should be moved under the single "src" directory
+	rather than being in a separate structure. So we'll have a package
+	org.ephman.examples
+	* We should switch to the Xerces XML parser to make sure we can distribute
+	it with the code
+	
+
+2001-Aug-22 
+	* Initial load of version 0.8
+

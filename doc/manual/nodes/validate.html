@@ -1,0 +1,62 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Language" content="en-us">
+<title>Abra User Manual</title>
+</head>
+
+<body>
+
+<h2><a name="property">Validate</a></h2>
+<h3>Description</h3>
+<p>Define validations on a java field, which are generated in a seperate Validator Class.  Found inside a <a href="field.html">field</a> element.</p>
+
+<h3>Parameters</h3>
+<table border="1" cellpadding="2" cellspacing="0">
+  <tr>
+    <td valign="top"><b>Attribute</b></td>
+    <td valign="top"><b>Description</b></td>
+    <td align="center" valign="top"><b>Required</b></td>
+  </tr>
+  <tr>
+    <td valign="top">regex</td>
+    <td valign="top">For string fields, a regular expression to check the string against.</td>
+    <td valign="top" align="center" rowspan="2">One of these</td>
+  </tr>
+  <tr>
+    <td valign="top">mandatory-if</td>
+    <td valign="top">the current field becomes mandatory if the field listed 
+is not null (or "" for strings)</td>
+  </tr>
+  <tr>
+    <td valign="top">code</td>
+    <td valign="top">For fields w/ REGEXP use this code instead of abra code</td>
+    <td valign="top" align="center">NO (Defaults to ValidationCodes.REGEXP_FAILED)</td>
+  </tr>
+  <tr>
+    <td valign="top">name</td>
+    <td valign="top">For field w/ REGEXP use this name as the error name instead of ugly '[a-z0-9 ]{4} ..'</td>
+    <td valign="top" align="center">NO (defaults to regex value)</td>
+  </tr>
+  <tr>
+    <td valign="top">required</td>
+    <td valign="top">If validation mandatory (but not database mandatory) this will assertMandatory without writing 'NOT NULL' in the DB</td>
+    <td valign="top" align="center" rowspan="2">One of these</td>
+  </tr>
+</table>
+<h3>Parameters specified as nested elements</h3>
+<h4>NONE</h4>
+<h3>Examples</h3>
+For valid regexp values see <a href="http://jakarta.apache.org/regexp/apidocs/org/apache/regexp/RE.html">jakarta regexp RE class</a>.  <a href="http://jakarta.apache.org/regexp/">Used from regexp.</a>
+<pre>  
+&lt;field name=&quot;name&quot; type="string" &gt;
+   &lt;validate regexp="[a-zA-Z]([a-zA-Z ]|\". \")*" / &gt;
+&lt;/field &gt;
+</pre>
+will require name to contain only letters, spaces or end with "." as in John Jr. 
+<hr>
+<p align="center">Copyright &copy; 2000,2001,2002 Paul Bethe and Richie Bielak. All rights
+Reserved.</p>
+</body>
+</html>
+

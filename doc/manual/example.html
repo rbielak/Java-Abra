@@ -1,0 +1,53 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Language" content="en-us">
+<title>Abra User Manual</title>
+</head>
+
+<body>
+<h2>Map file example code</h2>
+<pre>
+&lt;mapping&gt;
+
+&lt;class name="org.ephman.examples.family.generated.Person" identity="oid"&gt;
+   &lt;map-to table="my_family"/&gt;
+   &lt;description&gt;
+       a person in a family
+    &lt;/description&gt;
+    &lt;class-view name="org.ephman.examples.family.views.PersonView" 
+                   format="short" /&gt;
+
+    &lt;field name="oid" type="integer"&gt;
+		&lt;sql name="person_oid" /&gt;
+	&lt;/field&gt;
+    &lt;field name="firstName" type="string" len="80"&gt;
+        &lt;sql name="first_name"/&gt;
+        &lt;view in="short"/&gt;
+        &lt;validate regex="[a-zA-Z]([a-zA-Z ]|\". \")*"/&gt;
+    &lt;/field&gt;
+    &lt;field name="age" type="integer"&gt;
+        &lt;view in="short"/&gt;
+        &lt;sql name="age" constraint=">=0" constraint-name="person_age_ge_zero" /&gt;
+    &lt;/field&gt;
+    &lt;field name="birthday" type="date"&gt;
+        &lt;sql name="birthday"/&gt;
+    &lt;/field&gt;
+
+&lt;!-- links to parents --&gt;
+    &lt;field name="mother" type="org.ephman.examples.family.generated.Person" &gt;
+        &lt;sql name="mother_oid" constraint-name="person_mother_valid" /&gt;
+    &lt;/field&gt;
+    &lt;field name="father" type="org.ephman.examples.family.generated.Person" &gt;
+        &lt;view in="short" foreign-view="short" /&gt;
+        &lt;sql name="father_oid"/&gt;
+    &lt;/field&gt;
+&lt;/class&gt;
+
+&lt;/mapping&gt;
+<pre>
+<hr>
+<p align="center">Copyright &copy; 2000,2001,2002 Paul Bethe and Richie Bielak. All rights
+Reserved.</p>
+</body>
+</html>

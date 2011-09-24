@@ -1,0 +1,31 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Language" content="en-us">
+<title>Abra User Manual</title>
+</head>
+
+<body>
+<h1><a name="introduction">Introduction</a></h1>
+<p>Abra is a Java-based persistence tool, which can be used to define business classes 
+and their multi-tier mappings.  We needed a light-weight persistence tool which would 
+allow for simple xml based definitions, and take care of all the sql code and JDBC based 
+sql-Java mapping.</p>
+<p> This was accomplished by using an xml map-file to define classes 
+across sql, xml, and Java.  Later we added the idea of abstracted views of classes which
+ could be useful to pass to and from different interface layers that might not want to 
+pass around a big heavy object.</p>
+<p> As much of this was used in different message-based systems the idea of content 
+validation became important, and we realized that it might be nice to define the 
+validations on a particular field, or set of fields within a class, in the same place.
+Thus grew the map-file as it is today: a simple persistence layer with some extensions 
+to allow for a centralized repository of business information driving generated mapping 
+and validating code. 
+
+<hr>
+<p align="center">Copyright &copy; 2000,2001,2002 Paul Bethe &amp; Richie Bielak. All rights
+Reserved.</p>
+
+</body>
+</html>
+

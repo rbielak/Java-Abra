@@ -1,0 +1,270 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    ## an extension of the Castor mapping dtd to do class, schema, and
+    abstract-factory generation (see examples)
+ 
+    Castor Object Mapping DTD
+
+ -->
+
+
+<!--
+    A collection of class mappings. This is the top level element of
+    the mapping.
+
+    All the class mappings within a collection (including all included
+    collections) must be unique. A class cannot be mapped twice in the
+    same collection.
+
+ -->
+<!ELEMENT mapping ( description?, property*, generator*, class-generator?, include*, class+,  relation* , class-implements?)>
+
+<!-- property is a name-value pair to reuse in class and field definitions..
+    generator is a plugin to generate different info from the JClass objects (like taglibs, 
+          custom serializers, etc.)
+    class-generator - is a specific generator intended to override JavaClassGenerator and generate code for the language of your choice.
+    class-implements - is a list of interfaces for all generated classes to implements
+-->
+<!ELEMENT property EMPTY>
+<!ATTLIST property
+      name NMTOKEN #REQUIRED
+      value NMTOKEN #REQUIRED
+>
+
+<!ELEMENT generator EMPTY>
+<!ATTLIST generator
+      name NMTOKEN #REQUIRED
+>
+
+<!ELEMENT class-generator EMPTY>
+<!ATTLIST class-generator
+      name NMTOKEN #REQUIRED
+>
+
+
+<!--
+    Includes another collection of mappings in this collection. Can be
+    used to group several mappings from disparate files. The included
+    mapping file is specified by URL.
+
+   # not yet implemented by  Abra
+
+ -->
+<!ELEMENT include EMPTY>
+<!ATTLIST include
+    href  CDATA  #REQUIRED>
+
+
+<!--
+    Describes the mapping between a Java class and an SQL table, an
+    XML element..
+
+    A class can be mapped to one or all of these datasources at once,
+    by including all the relevant information in it's mapping.
+    SQL specific information is identifier with the sql-info element,
+    XML specific with the xml-info element, and so on.
+
+    A class is specified by it's Java class name (e.g. 'myapp.Product').
+    If a class extends another class for which mapping is provided,
+    the extends attribute should be used.
+
+    To map a class into an SQL table the sql-table element must be
+    specified, and the identity element must be specified.
+
+    All classes can be mapped to XML. The xml-schema element is used
+    with root elements to specify the document type and namespace when
+    producing XML documents from these objects.
+
+    ## extensions to Castor
+    implements - a list of fully qualified classes seperated by semi-colons
+
+
+    many-to-many - set to true when this is just a description of a many-to-many relationship
+         no java class is generated - just an abstract factory to do lookups
+         joining w/ the foriegn table
+ -->
+<!ELEMENT class ( description?, map-to?, class-view*, constraint*, field*, index* )>
+<!ATTLIST class
+    name            ID       #REQUIRED
+    extends         IDREF    #IMPLIED
+    implements      CDATA    #IMPLIED
+    identity        CDATA    #IMPLIED 
+    implements      CDATA    #IMPLIED
+    descendant      CDATA    #IMPLIED
+    cache-type      ( persistent | versioned ) "versioned"
+    end-date        ( true | false ) "false"
+    inline-only     ( true | false ) "false"
+    abstract        ( true | false ) "false"
+    many-to-many    ( true | false ) "false"
+>
+
+
+<!--
+    So that a class can have multiple parameter constraints
+ -->
+<!ELEMENT constraint (#PCDATA)>
+<!ATTLIST constraint
+     name           ID       #REQUIRED
+     type           ( unique | check ) #REQUIRED
+>
+
+
+<!-- to add sql indexes 
+    name is the name to use in the DB and the text is a comma seperated list of the OBJECT names (not sql names) to use 
+-->
+<!ELEMENT index (#PCDATA)>
+<!ATTLIST index
+     name           ID       #REQUIRED   
+>
+
+
+<!--
+    Specifies a many-to-many relation between two Java type. Each relation
+    contains exactly two related element. 
+
+   # NOT IMPLEMENTED  - instead use the many-to-many directive in the class element
+ -->
+<!ELEMENT relation ( description?, map-to?, related, related ) >
+<!ATTLIST relation 
+    name           NMTOKEN  #REQUIRED>
+
+
+<!--
+    Specifies an entity of a many-to-many relation. See <relation/>.
+ -->
+<!ELEMENT related ( description?, sql?, xml?, ldap? ) >
+<!ATTLIST related
+    name           NMTOKEN  #REQUIRED
+    type           NMTOKEN  #IMPLIED>
+
+
+<!--
+    Specifies the mapping between a Java class and an SQL table.
+    This element must be specified in order to map a class into an
+    SQL table.
+
+ -->
+<!ELEMENT map-to EMPTY>
+<!ATTLIST map-to
+    table      NMTOKEN  #IMPLIED
+    xml        NMTOKEN  #IMPLIED
+    >
+
+<!--
+    specifies an abstracted data view of this class 
+ -->
+<!ELEMENT class-view EMPTY>
+<!ATTLIST class-view
+    name      NMTOKEN  #REQUIRED
+    format        NMTOKEN  #REQUIRED>
+
+
+<!--
+    Specifies the mapping between a Java field and an SQL table
+    column, an XML element or attribute, an LDAP attribute, etc.
+
+    The mapping is specified from the perspective of the Java class.
+
+    Unless specified otherwise, the field is accessed through get/set
+    method using the field name (thus, for a field called xyz,
+    <type> getXyz() and void setXyz( <type> )). Collection fields
+    require only a get method with the exception of an array that
+    requires both a get and set method, and a Vector also needs an 
+    addTo method.
+
+    The field type is the proper Java class of the field's value or
+    a short name that maps to a Java class (e.g. integer or
+    java.lang.Integer).
+
+    If the field is a collection, the collection type is specified with
+    the collection attribute and the type of each element with the type
+    attribute.
+
+    ## extensions 
+    len - a field to specify the sql length in the 'varchar(xx)' definition
+         eg <field name="foo" type="string" len="42">
+                 <sql name="bar_foo" /></field>
+         will produce a line in the schema 'bar_foo varchar (42)' 
+         if validators generated will validate field against this length
+
+    ##  also
+        currently only collection = "vector" or "array" is supported
+        for collection mapping to db's
+    
+ -->
+<!ELEMENT field ( description?, sql?, xml?, view* )>
+<!ATTLIST field
+    name           NMTOKEN  #REQUIRED
+    type           NMTOKEN  #REQUIRED
+    required       ( true | false )  "false"
+    collection     ( array | vector | hashtable | collection | set | map )  #IMPLIED
+    len            CDATA    #IMPLIED
+>
+
+
+<!--
+    Field mapping information relevant only for SQL.
+
+    The SQL column name and type should be specified for all fields.
+    The SQL type can be the proper Java class type returned by the
+    JDBC driver or the SQL type without precision (e.g.
+    java.math.BigDecimal or numeric).
+
+    if this is a foreign field (stored in seperate table..)
+    then if constraint-name is supplied this will be used for a referential constraint
+    if a regular field then if constraint is supplied (like '>0') then  constraint-name
+          will be used to describe
+    if the field's values should be unique within the table use unique="true"
+    if inline="true" then the composite-object will be stored in this table using 
+       the value from prefix= as a prefix to all the sql names (so that multiple of the 
+       same type can be inlined)
+ -->
+<!ELEMENT sql EMPTY>
+<!ATTLIST sql
+    name	    NMTOKEN  #IMPLIED
+    constraint-name CDATA #IMPLIED
+    constraint  CDATA #IMPLIED
+   
+    unique      ( true | false )  "false"
+    inline      ( true | false )  "false"
+    prefix      CDATA    #IMPLIED 
+> 
+
+<!-- 
+     mapping info for view generation
+     'in' specifies the format(s) (comma-sep) this appears in
+     'foreign-view' if Composite (like EquityAllocation) which view of EA to use (corresponds to format)
+-->
+<!ELEMENT view EMPTY>
+<!ATTLIST view
+    in	    NMTOKEN  #REQUIRED
+    foreign-view CDATA #IMPLIED
+    foreign-field CDATA #IMPLIED
+    > 
+
+<!--
+    Field mapping information relevant only for XML.
+
+    The attribute/element name and XML schema type should be specified
+    for all fields. The node type indicates whether the field maps to
+    an attribute, an element or the textual content of this element.
+    Only simple types (primitives, date, string, etc) can be used for
+    attribute values. Only one field can be specified as the content
+    model in a given object.
+
+ -->
+<!ELEMENT xml EMPTY>
+<!ATTLIST xml
+    name  NMTOKEN  #IMPLIED
+  
+    node  ( attribute | element | text )  #IMPLIED>
+
+
+<!--
+    A textual description.
+
+ -->
+<!ELEMENT description ( #PCDATA )>
+
+

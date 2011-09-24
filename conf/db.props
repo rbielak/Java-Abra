@@ -1,0 +1,11 @@
+
+
+# for psql this is the db Name
+
+database=test
+host=localhost
+# or machine name oranet.oracle.com
+user=paulb
+password=
+port=3306
+    # PSQL default is 5432 ora is 1521

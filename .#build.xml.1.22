@@ -1,0 +1,368 @@
+<project name="abra" default="help">
+
+	<!-- Load environment variables -->
+	<property environment="env"/>
+
+    <property name="ephman.src" value="org/ephman" />
+    <property name="abra.src" value="org/ephman/abra" />
+    <property name="abra.db.src" value="org/ephman/abra/database" />
+    <property name="oracle.src" value="org/ephman/abra/database/oracle" />
+    <property name="postgresql.src" value="org/ephman/abra/database/postgresql" />
+    <property name="tools.src" value="org/ephman/abra/tools" />
+    <property name="utils.src" value="org/ephman/utils" />
+    <property name="abra-utils.src" value="org/ephman/abra/utils" />
+    <property name="abra-ant.src" value="org/ephman/abra/ant" />
+    <property name="database.src" value="org/ephman/database" />
+    <property name="tests.src" value="org/ephman/tests" />
+    <property name="xml.src" value="org/ephman/xml" />
+
+    <property name="outdir" value="${basedir}/classes"/>
+    <property name="libdir" value="${basedir}/lib"/>
+    <property name="srcdir" value="${basedir}/src"/>
+    <property name="docdir" value="${basedir}/doc/javadoc"/>
+
+<!-- define basedir ($abra/src) and libdir ($abra/lib) -->
+
+	<target name="utils" >
+		<antcall target="compile">
+			<param name="subdir" value="utils"/>
+		</antcall>
+	</target>
+
+	<!-- run tests -->
+	<target name="tests" depends="compile-tests">
+		<java classpathref="abra.classpath"
+			classname="org.ephman.tests.Test${test}" fork="yes"
+			>
+			<jvmarg value="-Dabra.home=${env.ABRA_HOME}"/>
+	</java>
+	</target>
+
+	<target name="compile-tests" depends="set-tests, compile">
+	</target>
+	<target name="set-tests">
+		<property name="subdir" value="tests"/>
+	</target>
+
+	<target name="compile-xml" depends="set-xml, have_jcup, compile" 
+		description="compile the ABRA Xml Parser (required JavaCUP)">
+	</target>
+	<target name="set-xml" >
+		<property name="subdir" value="xml"/>
+	</target>
+
+    <target name="compile-dtd" depends="set-dtd, have_jcup, compile" 
+		description="compile the ABRA Dtd Parser (required JavaCUP)">
+	</target>
+	<target name="set-dtd">
+		<property name="subdir" value="xml/dtd"/>
+	</target>
+
+    <target name="compile-sql" depends="set-sql, compile" 
+		description="compile the ABRA SQL Tools">
+	</target>
+	<target name="set-sql">
+		<property name="subdir" value="abra/tools/sql"/>
+	</target>
+
+	<target name="compile" depends="init">
+		<echo message="compiling ${ephman.src}/${subdir}"/>
+        <javac classpathref="abra.classpath" destdir="${outdir}" srcdir="${srcdir}"
+				debug="on">
+			
+            <include name="${ephman.src}/${subdir}/**" />
+            <exclude name="*/oracle/**" />
+        </javac>
+	</target>
+
+	<!-- Build the tool needed to generate code and schema from XML configs -->
+	<target name="tools">
+        <javac classpathref="abra.classpath" destdir="${outdir}" srcdir="${srcdir}" debug="on">
+            <include name="${tools.src}/**" />
+            <include name="${xml.src}/*.java" />
+            <include name="${utils.src}/*.java" />
+            <include name="${abra-ant.src}/*.java" />
+            <include name="${abra-utils.src}/Abra*.java" />
+            <exclude name="${xml.src}/AbraXmlParser.java" />
+            <exclude name="${xml.src}/TestXml.java" />
+            <exclude name="${xml.src}/Yylex.java" />
+            <exclude name="**/sql/*" />
+            <exclude name="**/oracle/*" />
+            <exclude name="**/postgresql/*" />
+            <exclude name="**/sybase/*" />
+            <exclude name="**/mysql/*" />
+            <exclude name="**/db2/*" />
+            <exclude name="**/sqlserver/*" />
+            <exclude name="**/db2-UDB/*" />
+        </javac>
+	</target>
+  
+   <target name="clean" description="Delete compiled classes" depends="fresh">
+      <delete>
+         <fileset dir="${libdir}">
+            <include name="*.jar"/>
+         </fileset>
+      </delete>
+   </target>
+
+   <target name="tags" description="Make a unix tags file using etags">
+      <exec executable="${basedir}/bin/make_tags" failonerror="yes"/>
+   </target>
+
+<!-- target to copy, compile (assuming 'dbname' is set) --> 
+   <target name="make_all" depends="copy_files, utils, tools, compile_all, tools_jar">
+
+   </target>
+
+
+<!-- Build the example - generate required code -->
+<target name="examples" depends="tools_jar">
+	<!-- Remove generated code -->
+	<echo message="Removing generated code and schema"/>
+	<delete>	
+		<fileset dir="${srcdir}">
+			<include name="org/ephman/examples/family/generated/*.java"/>
+			<include name="org/ephman/examples/family/*.sql"/>
+		</fileset>
+	</delete>
+	<!-- Generate code for the examples -->
+	<echo message="Generate Java code and schema"/>
+	<java classname="org.ephman.abra.tools.MapToJava" classpathref="abra.generation.classpath" fork="yes">
+		<!-- Output directory root for the generated java classes.
+		     Actual directory is determined by the package name in
+			 input XML file
+		-->
+		<arg line="-outdir"/>
+		<arg path="${srcdir}"/>
+		<!-- Schema file to generate -->
+		<arg line="-schema"/>
+		<arg path="${srcdir}/org/ephman/examples/family/family.sql"/>
+		<!-- Generate abstract factory classes -->
+		<arg line="-factories"/>
+		<!-- Specify the class that extends all factories -->
+		<arg line="-validation"/>
+<!--		<arg line="-facext"/>
+		<arg line="org.ephman.abra.database.FactoryBase"/>
+-->
+
+		<!-- Input XML file that specifies what to generate -->
+		<arg path="${srcdir}/org/ephman/examples/family/family.xml"/>
+	</java>
+
+	<!-- Compile code for the examples -->
+	<echo message="Compile the example"/>
+	<javac classpathref="abra.classpath" destdir="${outdir}" srcdir="${srcdir}">
+		<include name="org/ephman/examples/family/**"/>
+	</javac>
+</target>
+
+<!-- target for compiling abra -->
+	<target name="compile_all">
+		<javac classpathref="abra.classpath" destdir="${outdir}" srcdir="${srcdir}" debug="on">
+            <include name="${abra.src}/**" />
+            <!-- exclude db specific (to compile) -->
+            <exclude name="**/oracle/*" />
+            <exclude name="**/postgresql/*" />
+            <exclude name="**/sybase/*" />
+            <exclude name="**/mysql/*" />
+            <exclude name="**/sql/*" />
+            <exclude name="**/sqlserver/*" />
+            <exclude name="**/db2/*" />
+            <exclude name="**/db2-UDB/*" />
+		</javac>
+
+		<copy todir="${outdir}/${ephman.src}" overwrite="true">
+         <fileset dir="${srcdir}/${ephman.src}">
+             <include name="errors*.properties" />
+          </fileset>
+       </copy>
+	</target>
+
+<!-- write out javadoc.. -->
+    <target name="javadoc" description="Generate javadoc (best to run after building your desired database ('ant postgresql')">
+       <javadoc sourcepath="${srcdir}" classpathref="abra.classpath" destdir="${docdir}"
+            use="true" version="true" author="true" package="true"
+            packagenames="org.ephman.abra.database, org.ephman.abra.utils, org.ephman.abra.tools, org.ephman.abra.tools.plugins, org.ephman.utils, org.ephman.abra.validation" windowtitle="Abra - a lightweight persistence layer"
+            >
+       </javadoc>
+    </target>
+
+<!-- generic copy files given once 'dbname' property is set -->
+    <target name="copy_files">
+       <copy todir="${srcdir}/${abra.db.src}" overwrite="true">
+         <fileset dir="${srcdir}/${abra.db.src}/${dbname}">
+             <include name="**/*.java" />
+			 <exclude name="**/*Oracle*.java" />
+			 <exclude name="**/*Postgres*.java" />
+          </fileset>
+       </copy>
+       <copy todir="${srcdir}/${tools.src}" overwrite="true">
+         <fileset dir="${srcdir}/${tools.src}/${dbname}">
+             <include name="**/SchemaGenerator.java" />
+			 <include name="**/FactoryGenerator.java" />
+          </fileset>
+       </copy>
+		<tstamp />
+    </target>
+
+<!-- Tools Jar files -->
+    <target name="tools_jar" depends="tools">
+      <jar jarfile="${libdir}/abra-tools.jar"
+         basedir="${outdir}"
+         includes="org/ephman/abra/tools/**, org/ephman/xml/**,org/ephman/errors*, org/ephman/abra/utils/Abra*, org/ephman/utils/**, org/ephman/abra/ant/*" />
+    </target>
+
+<!-- main jar -->
+   <target name="main_jar"  >
+ 		<jar jarfile="${libdir}/abra-${dbname}.jar"
+         basedir="${outdir}"
+         includes="org/**" excludes="**/examples/**, **/tests/**, **/junit/**"/>
+		<copy file="${libdir}/abra-${dbname}.jar" tofile="${libdir}/abra-db.jar"/>
+	</target>
+
+<!-- junit -->
+	<property name="junit.dir" value="${basedir}/src/org/ephman/junit"/>
+
+	<target name="junit-generate" description="Generate classes for Unit tests">
+		<ant antfile="${junit.dir}/build.xml" target="junit-generate"/>
+	</target>
+	<target name="junit-compile" depends="init" description="Compile Junit tests">
+		<ant antfile="${junit.dir}/build.xml" target="junit-compile"/>
+	</target>
+	<target name="junit-run" depends="junit-compile" description="Run Junit tests">
+		<ant antfile="${junit.dir}/build.xml" target="junit-run"/>
+	</target>
+<!-- PSQL BUILDS -->
+    <target name="set_psql">    
+       <property name="dbname" value="postgresql"/>
+    </target>
+ 
+
+    <target name="postgresql" depends="init, set_psql, make_all"
+		description="Build tools and database classes into a jar file for use with PostgreSQL">
+	  <antcall target="main_jar">
+	    <param name="dbname" value="psql" />
+	  </antcall>
+    </target>
+<!-- Sybase BUILDS -->
+    <target name="set_syb">    
+       <property name="dbname" value="sybase"/>
+    </target>
+ 
+
+    <target name="sybase" depends="init, set_syb, make_all"
+		description="Build tools and database classes into a jar file for use with PostgreSQL">
+	  <antcall target="main_jar">
+	    <param name="dbname" value="sybase" />
+	  </antcall>
+    </target>
+<!-- new Builds for db2 -->
+	<target name="set_db2">
+        <property name="dbname" value="db2"/>
+    </target>
+
+	<target name="set_db2-UDB" >
+        <property name="dbname" value="db2-UDB"/>
+    </target>
+
+    <target name="db2-UDB" depends="init, set_db2-UDB, make_all, main_jar"
+		description="compile and make a jar file for the db2-UDB distribution">
+      <!-- delete dir="${outdir}" -->
+    </target>
+
+
+    <target name="db2" depends="init, set_db2, make_all, main_jar"
+		description="compile and make a jar file for the db2 distribution">
+      <!-- delete dir="${outdir}" -->
+    </target>
+
+<!-- ORACLE BUILDS -->
+    <target name="set_oracle">
+        <property name="dbname" value="oracle"/>
+    </target>
+
+    <target name="oracle" depends="init, set_oracle, make_all, main_jar"
+		description="Build tools and database classes into a jar file for use with PostgreSQL">
+      <!-- delete dir="${outdir}" -->
+    </target>
+
+<!-- MySQL BUILDS -->
+    <target name="set_mysql">
+        <property name="dbname" value="mysql"/>
+    </target>
+
+    <target name="mysql" depends="init, set_mysql, make_all, main_jar"
+		description="Build tools and database classes into a jar file for use with PostgreSQL">
+      <!-- delete dir="${outdir}" -->
+    </target>
+
+<!-- MS SQL Server BUILDS -->
+    <target name="set_sqlserver">
+        <property name="dbname" value="sqlserver"/>
+    </target>
+
+    <target name="sqlserver" depends="init, set_sqlserver, make_all, main_jar"
+		description="Build tools and database classes into a jar file for use with PostgreSQL">
+      <!-- delete dir="${outdir}" -->
+    </target>
+
+
+    <target name="fresh">
+		<delete dir="${outdir}"/>
+		<mkdir dir="${outdir}"/>
+	</target>
+
+   
+	<target name="have_classpath" depends="have_regexp, have_abra_home, have_jdbc, have_xml, have_junit">
+    </target>
+
+	<path id="abra.generation.classpath">
+		<pathelement path="lib/abra-tools.jar"/>
+		<pathelement path="${env.XML_JAR}"/>
+		<pathelement path="${env.REGEXP_JAR}"/>
+		<pathelement path="${env.JDBC_JAR}"/>
+		<pathelement path="${env.JCUP_JAR}"/>
+	</path>
+
+	<path id="abra.classpath">
+		<pathelement path="${outdir}" />
+		<pathelement path="lib/abra-${dbname}.jar"/>
+		<pathelement path="${env.XML_JAR}"/>
+		<pathelement path="${env.REGEXP_JAR}"/>
+		<pathelement path="${env.JDBC_JAR}"/>
+		<pathelement path="${env.JCUP_JAR}"/>
+		<pathelement path="${env.JUNIT_JAR}"/>
+	</path>
+
+	<target name="have_abra_home" unless="env.ABRA_HOME">
+		<fail message="You do not have $ABRA_HOME pointing to the Abra directory"/>
+	</target>
+
+	<target name="have_jcup" unless="env.JCUP_JAR">
+		<fail message="You do not have $JCUP_JAR pointing to the java_cup"/>
+	</target>
+
+	<target name="have_jdbc" unless="env.JDBC_JAR">
+		<fail message="You do not have $JDBC_JAR pointing anywhere"/>
+	</target>
+
+	<target name="have_xml" unless="env.XML_JAR">
+		<fail message="You do not have $XML_JAR pointing anywhere"/>
+	</target>
+
+	<target name="have_junit" unless="env.JUNIT_JAR">
+		<fail message="You do not have $JUNIT_JAR pointing anywhere"/>
+	</target>
+
+	<target name="have_regexp" unless="env.REGEXP_JAR">
+		<fail message="You do not have regexp installed as $REGEXP_JAR"/>
+	</target>
+
+	<target name="init" depends="have_classpath">
+		<mkdir dir="${outdir}"/>
+	</target>
+
+    <target name="help">
+      <echo message="oracle | postgresql | db2 | db2-UDB | sqlserver | tools_jar | examples | compile-xml | javadoc"/>
+    </target>
+</project>

@@ -1,0 +1,73 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Language" content="en-us">
+<title>Abra User Manual</title>
+</head>
+
+<body>
+
+<h2><a name="property">View</a></h2>
+<h3>Description</h3>
+<p>Define a field in an abra view.  If composite define a foreign view or field.</p>
+
+<h3>Parameters</h3>
+<table border="1" cellpadding="2" cellspacing="0">
+  <tr>
+    <td valign="top"><b>Attribute</b></td>
+    <td valign="top"><b>Description</b></td>
+    <td align="center" valign="top"><b>Required</b></td>
+  </tr>
+  <tr>
+    <td valign="top">in</td>
+    <td valign="top">the 'format' name defined in a class-view node</td>
+    <td valign="top" align="center">Yes must be a valid format</td>
+  </tr>
+  <tr>
+    <td valign="top">foreign-view</td>
+    <td valign="top">valid 'format' in foreign class to use</td>
+    <td valign="middle" align="center" rowspan="2">If a composite field, one of these</td>
+  </tr>
+  <tr>
+    <td valign="top">foreign-field</td>
+    <td valign="top">a java field name to map from the composite</td>
+  </tr>
+</table>
+<h3>Parameters specified as nested elements</h3>
+<h4>NONE</h4>
+<h3>Examples</h3>
+
+<pre>  
+&lt;field name=&quot;name&quot; type="string" &gt;
+   &lt;view in="edit"  / &gt;
+&lt;/field &gt;
+</pre>
+This will cause the name field to ocur in the format defined as 'edit'
+
+<pre>  
+&lt;field name=&quot;address&quot; type="org.Address" &gt;
+   &lt;view in="edit"  foreign-view="display" / &gt;
+&lt;/field &gt;
+</pre>
+
+this will cause the 'display' format of the org.Address class to occur in the 
+edit view of this class
+
+Or single field-mapping.
+<pre>  
+&lt;field name=&quot;address&quot; type="org.Address" &gt;
+   &lt;view in="edit"  foreign-field="city" / &gt;
+&lt;/field &gt;
+</pre>
+
+This will create a field of the java type of city in class Address to be
+in the edit view.  If a call to this.createEditView () is made then the
+address field will be populated with a call to this.getAddress().getCity()
+
+<hr>
+<p align="center">Copyright &copy; 2000,2001,2002 Paul Bethe and Richie Bielak. 
+All rights
+Reserved.</p>
+</body>
+</html>
+

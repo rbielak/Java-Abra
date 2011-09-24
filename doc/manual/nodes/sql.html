@@ -1,0 +1,88 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Language" content="en-us">
+<title>Abra User Manual</title>
+</head>
+
+<body>
+
+<h2><a name="property">Sql</a></h2>
+<h3>Description</h3>
+<p>Define a sql name and constraints/constraint-names for a field.  Found in
+ a <a href="field.html">field</a> element.</p>
+
+<h3>Parameters</h3>
+<table border="1" cellpadding="2" cellspacing="0">
+  <tr>
+    <td valign="top"><b>Attribute</b></td>
+    <td valign="top"><b>Description</b></td>
+    <td align="center" valign="top"><b>Required</b></td>
+  </tr>
+  <tr>
+    <td valign="top">name</td>
+    <td valign="top">the name to use in an sql table.</td>
+    <td valign="top" align="center">Yes</td>
+  </tr>
+ <tr>
+    <td valign="top">inline</td>
+    <td valign="top">if true store this object in this classes table (not seperate).</td>
+    <td valign="top" align="center">No (defaults to false)</td>
+  </tr>
+  <tr>
+    <td valign="top">prefix</td>
+    <td valign="top">the name to use in front of the inline object.</td>
+    <td valign="top" align="center">If inline='true'</td>
+  </tr>  
+  <tr>
+    <td valign="top">constraint-name</td>
+    <td valign="top">a constraint name for referential integrity (if composite field) or check constraint</td>
+    <td valign="middle" align="center" >If this field is a DB object 
+ or constraint= is specified</td>
+  </tr>
+  <tr>
+    <td valign="top">constraint</td>
+    <td valign="top">for simple-types (ie ="> 0" for integers).</td>
+    <td valign="middle" align="center" >No</td>
+  </tr>
+  <tr>
+    <td valign="top">unique</td>
+    <td valign="top">if this column should have (UNIQUE) constraint in the 
+db.</td>
+    <td valign="middle" align="center" >No</td>
+  </tr>
+
+</table>
+<h3>Parameters specified as nested elements</h3>
+<h4>NONE</h4>
+<h3>Examples</h3>
+<pre>  
+&lt;field name=&quot;name&quot; type="string" &gt;
+   &lt;sql name="foo_name" unique="true" / &gt;
+&lt;/field &gt;
+</pre>
+<pre>  
+&lt;field name=&quot;currencty&quot; type="org.Currency" &gt;
+   &lt;sql name="currency" inline="true" prefix="curr" / &gt;
+&lt;/field &gt;
+</pre>
+Note: inline objects should only contain native types (no Collections or sub objects)
+<pre>  
+&lt;field name=&quot;myBar&quot; type="org.Bar" &gt;
+   &lt;sql name="foo_bar_oid" constraint-name="foo_has_valid_bar" / &gt;
+&lt;/field &gt;
+</pre>
+<pre>  
+&lt;field name=&quot;accountBalance&quot; type="double" required="true" &gt;
+   &lt;sql name="foo_acc_bal" constraint=">= 0" 
+              constraint-name="foo_acc_bal_ge_zero" / &gt;
+&lt;/field &gt;
+</pre>
+
+<hr>
+<p align="center">Copyright &copy; 2000,2001,2002 Paul Bethe and Richie Bethe. 
+All rights
+Reserved.</p>
+</body>
+</html>
+

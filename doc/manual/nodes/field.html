@@ -1,0 +1,81 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Language" content="en-us">
+<title>Abra User Manual</title>
+</head>
+
+<body>
+
+<h2><a name="property">Field</a></h2>
+<h3>Description</h3>
+<p>Define a field across XML, SQL, and Java.  Found inside of <a href="class.html">class</a> elements.</p>
+
+<h3>Parameters</h3>
+<table border="1" cellpadding="2" cellspacing="0">
+  <tr>
+    <td valign="top"><b>Attribute</b></td>
+    <td valign="top"><b>Description</b></td>
+    <td align="center" valign="top"><b>Required</b></td>
+  </tr>
+  <tr>
+    <td valign="top">name</td>
+    <td valign="top">the name of the field (in Java).</td>
+    <td valign="top" align="center" rowspan="2">Yes</td>
+  </tr>
+  <tr>
+    <td valign="top">type</td>
+    <td valign="top">primitive type (see list) or a fully qualified Java class 
+name (if it should be stored it should be in a map-file which is generated 
+along with this one.</td>
+  </tr>
+  <tr>
+    <td valign="top">collection</td>
+    <td valign="top">currently ("vector", "array") types supported.</td>
+    <td valign="middle" align="center" >No</td>
+  </tr>
+  <tr>
+    <td valign="top">len</td>
+    <td valign="top">if a string field reqd if database field, and can also be used for generated validation.</td>
+    <td valign="middle" align="center" >Only if a (database class or for validators) and a 
+string</td>
+  </tr>
+<tr>
+    <td valign="top">required</td>
+    <td valign="top">boolean which defines this field to be required (NOT NULL 
+in a db, != null in validator).</td>
+    <td valign="middle" align="center" >No (defaults to false)</td>
+  </tr>
+
+</table>
+<h3>Parameters specified as nested elements</h3>
+<h4><a href="sql.html">sql</a></h4>
+<p>provides the field name in the db and any constraints/constraint-names.</p>
+<h4><a href="xml.html">xml</a></h4>
+<p>provides the field name in xml.</p>
+<h4><a href="view.html">view</a> *(multiple)</h4>
+<p>defines any views this field belongs to.</p>
+<h4><a href="validate.html">validate</a> *(multiple)</h4>
+<p>defines any validations needed on this field.</p>
+<h3>Examples</h3>
+.. inside a class Foo
+<pre>
+&lt;field name="name" type="string" len="32"&gt; 
+   &lt;sql name="foo_name" /&gt;
+   &lt;validate regex="[a-zA-Z .]*" /&gt;
+   &lt;view in="blotter" />
+&lt;/field&gt;
+
+&lt;field name="otherFoo" type="org.Foo" &gt; 
+   &lt;sql name="foo_other_oid" constraint-name="foo_has_other_foo" /&gt;
+   &lt;view in="blotter" foreign-view="blotter" />
+&lt;/field&gt;
+</pre>
+
+<hr>
+<p align="center">Copyright &copy; 2000,2001,2002 Paul Bethe and Richie Bielak. 
+All rights
+Reserved.</p>
+</body>
+</html>
+

@@ -1,0 +1,9 @@
+How-to/  will contain a quick tutorial on setting up a dummy project and the evolution of
+    a map file
+
+javadoc/  !! if none exists try 'cd ..; ant java_doc;'  contains doc on both generators, 
+   and base classes used by persistence layer (also see examples)
+
+manual/   manual describing how to install and use Abra + the make up and available nodes 
+	in an Abra map-file.  
+

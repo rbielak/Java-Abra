@@ -1,0 +1,7 @@
+#!/bin/bash
+# make a tags file for emacs or vi
+
+echo Running etags
+rm TAGS
+find $PWD -name \*.java -exec etags -a {} \;
+echo TAGS file created in $PWD

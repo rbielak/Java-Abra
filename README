@@ -1,0 +1,29 @@
+INTRODUCTION:
+
+Abra is a light-weight Java persistance layer that allows Java objects
+to be stored and retrieved in relational databases. In version 0.1 Oracle
+and PostgreSql are supported.
+
+Abra includes tools that generate Java classes that represent the
+persistent objects, factory classes to store and retrieve them
+and corresponding database schema. The generation is driven by a single
+XML configuration file.
+
+OTHER PACKAGES REQUIRED:
+
+To build you need the "ant" tool from Apache:
+	http://jakarta.apache.org/ant
+
+To build you need the "regexp" library from Apache:
+	http://jakarta.apache.org/regexp
+
+To run you will need an JAX/SAX XML parser. For example:
+	http://xml.apache.org/xerces-j/index.html
+
+You will also need either Oracle or PostgreSql JDBC libraries.
+
+
+BUILDING:
+
+See BUILD file
+

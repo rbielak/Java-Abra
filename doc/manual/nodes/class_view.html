@@ -1,0 +1,77 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Language" content="en-us">
+<title>Abra User Manual</title>
+</head>
+
+<body>
+
+<h2><a name="property">class-view</a></h2>
+<h3>Description</h3>
+<p>Define a data abstraction for a class.  Useful for passing collections of 
+objects to a display layer where only 9 of 100 fields are needed, also if a 
+message or user entry is 20 of 100 fields, one can create an entry-view which 
+can be applied to a new or existing full class.  Views are given an alias for 
+use inside the &lt;view&gt; node.  Views can have inheritance to mimic the inheritance structure of the full-classes which are handled by using the same alias.  (see Examples)  Found inside <a href="class.html">class</a> nodes.</p>
+
+<h3>Parameters</h3>
+<table border="1" cellpadding="2" cellspacing="0">
+  <tr>
+    <td valign="top"><b>Attribute</b></td>
+    <td valign="top"><b>Description</b></td>
+    <td align="center" valign="top"><b>Required</b></td>
+  </tr>
+  <tr>
+    <td valign="top">name</td>
+    <td valign="top">a fully-qualified Java class name (different from full-class) to wrap this abstraction.</td>
+    <td valign="top" align="center" rowspan="2">Yes</td>
+  </tr>
+  <tr>
+    <td valign="top">format</td>
+    <td valign="top">an alias name like 'blotter' for later use</td>
+
+  </tr>
+
+</table>
+<h3>Parameters specified as nested elements</h3>
+<h4>NONE</h4>
+
+<h3>Examples</h3>
+<pre>  
+&lt;class name=&quot;org.Foo&quot; &gt;
+  &lt;class-view name="org.FooBlotterView" format="blotter"/&gt;
+  &lt;field name="name" type="string"&gt;
+    &lt;view in="blotter" /&gt;
+  &lt;/field&gt;
+  ... more fields with no view tag..
+&lt;/class&gt;</pre>
+to make a blotter view call 
+<pre>
+<code>org.Foo foo = new Foo ();</code>
+<code>foo.setName ("Bar");</code>   
+<code>org.FooBlotterView b = foo.createBlotterView ();</code></pre>
+to apply a blotter view 
+<pre>
+<code>org.FooBlotterView in = new FooBlotterView ();</code>
+<code>in.setName ("Bob");</code>
+<code>....  pass through some messaging/queueing</code>
+<code>foo.initializeFromView (in);</code> 
+</pre>
+For inheritence use the same format name (in this case 'blotter')..
+<pre>  
+&lt;class name=&quot;org.Bar&quot; extends="org.Foo"&gt;
+  &lt;class-view name="org.BarBlotterView" format="blotter"/&gt;
+  &lt;field name="favoriteTeam" type="string"&gt;
+    &lt;view in="blotter" /&gt;
+  &lt;/field&gt;
+  ... more fields with no view tag..
+&lt;/class&gt;</pre>
+Now Class BarBlotterView will extend FooBlotterView and contain the extra field 
+"favoriteTeam"
+<hr>
+<p align="center">Copyright &copy; 2000,2001,2002 Paul Bethe and Richie Bielak. All rights
+Reserved.</p>
+</body>
+</html>
+

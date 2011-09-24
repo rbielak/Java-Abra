@@ -1,0 +1,5 @@
+java JLex.Main xml.lex
+mv xml.lex.java Yylex.java
+java java_cup.Main -parser AbraXmlParser < xml.cup
+sed -e "s/lr_parser {/lr_parser implements XmlParser {/g" < AbraXmlParser.java > foo.j
+mv foo.j AbraXmlParser.java

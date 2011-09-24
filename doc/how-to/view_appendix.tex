@@ -1,0 +1,174 @@
+\chapter {Full listings of Switches and Options}
+
+\section{XML Map file options}
+These can also be found in codegen.dtd at http://charzard.
+
+
+\# note include and relation are to be implemented ..
+
+\begin{itemize}
+\item{mapping ( class+,  property* )}
+the top level element for all Abra files
+
+\item{class ( description?, cache-type?, map-to?, class-view+, constraint+, field+ )}
+\begin{description}
+\item[name] the fully quaified class name - (ie. com.foo.Bar)
+\item[extends] a Java class to extend (does not have to be in the map-file)
+\item[identity] for SQL-mapping the primary key of this table
+\item[implements] any Java interfaces to implement (; seperated) 
+\item[factory-ext] the Java base factory for the generated Abstract fac defaults to (FactoryBase or EndDateFactoryBase (end-date=''true'')
+\item[many-to-many] set to true for many to many relationships
+\item[end-date] set to true if the class should be end-dated not deleted.
+\end{description}
+
+\item{constraint}
+\begin{description}
+     \item[name] 
+     \item[type] 'unique' or 'check'
+\end{description}
+\item{relation ( description?, map-to?, related, related) } : NOT implemented
+      name        
+\item{related ( description?, sql?, xml?, ldap? )} : NOT implemented
+\begin{description}
+    \item[name]
+    \item[type] 
+\end{description}
+\item{ map-to}
+\begin{description}
+    \item[table] the sql table name
+    \item[xml] the xml node name
+\end{description}
+
+\item{class-view}: a definition of a class data-view (to abstract this
+class)
+\begin{description}
+    \item[name]
+    \item[format] a short name to be use later like 'normal', 'blotter'
+\end{description}
+
+
+
+\item{field ( description?, sql?, xml?, view+ , validate*)} : description of a java/sql/xml field mapping 
+\begin{description}
+    \item[name]
+    \item[type] Fully qualified name (integer, string or foo.bar.FooBar)
+    \item[required] if true both sql and xml will require this field
+    \item[collection]    ( array | vector | hashtable | collection | set | map ) 
+\end{description}
+
+\item{sql}: for field to sql mappings
+\begin{description}
+    \item[name]
+    \item[constraint-name] for referential or defined contraints
+    \item[constraint] to define a field constraint (like '> 0')
+    \item[type] to re-define the sql type (otherwise the default
+mappings are used
+\end{description}
+
+\item{view}: to define how this field is viewed in different data abstractions
+\begin{description}
+    \item[in] the format of the view (like 'blotter')
+    \item[foreign-view] if a composite field the name of the view in
+the other class
+	\item[foreign-field] if a composite field the single parameter to rip
+\end{description}
+ 
+\item{xml}: to define a how the java maps to xml
+\begin{description}
+    \item[name]
+    \item[type]
+    \item[node]  ( attribute | element | text ) how it should be (un)/marshalled
+\end{description}
+\item{validate}: add a validation node to this field
+\begin{description}
+	\item[required] set to true for business level mandatory field
+	\item[regex] give a regular expression for pattern matching
+	\item[name] used for regexp failed messages
+	\item[code] used for regexp failed codes
+\end{description}
+\end{itemize}
+
+
+\section{Switches in MapToJava}
+The list of switches available in MapToJava. 
+
+\begin{itemize}
+\item Generation options
+\begin{description}
+\item{-outdir \textless directory\textgreater} : redifines the base output directory from . to
+the given one
+
+\item{-schema \textless schema-file\textgreater} : create a schema file of this name
+
+\item{-factories} : create factories
+
+\item{-facext \textless factory-name\textgreater} : if -factories is
+set use this factory as base (unless a class explicitly declares
+factory-ext=) (DEFAULTS to FactoryBase)
+\item{-implements \textless class-name\textgreater} : use this class
+as a global implements for all classes generated.
+\item{-verify} : generate nothing just make sure the map is valid XML
+\item{-validation} : generate Base Validators
+\item{-procs} \textless pkg\textgreater : generate stored procedures and use them to store and update
+\item{-xp} : use Abra Xml Parser instead of Xerces
+\end{description}
+\item Text Feedback options
+
+\begin{description}
+\item{-supress} : only print out Error messages
+\item{-verbose} : a longer print out listing each class touched
+\item{-mega} : a mega print out with all the verbose info and info
+about each member field.
+\end{description}
+
+\item Props file
+\begin{description}
+\item {-props \textless props-file\textgreater} : instead of the above
+command-line flags a props file can be specified with all the above
+flags.
+\item an example file
+\begin{verbatim}
+outdir=/home/paulb/Development/java
+files=/home/paulb/Development/schema/test_map.xml
+schema=../schema/new_merlin_schema.sql
+factories=true
+\end{verbatim}
+
+\end{description}
+
+\end{itemize}
+\section{List of xml to Java/SQL mappings}
+
+
+\begin{tabular}{|c|c|c|c|}
+\hline
+XML & Java & SQL & notes \\ \hline \hline
+string & java.lang.String & varchar (n) & n is specified in the len
+attribute \\ \hline
+
+integer & int & int & - \\ \hline
+
+date & java.sql.Timestamp & date & db uses GMT.. \\ \hline
+
+long & long & number (38,0) & - \\ \hline
+
+boolean & boolean & varchar (1) & the 'T'/'F' is stored and retrieved \\
+
+float & float & float & - \\ \hline
+
+double & double & double & - \\ \hline
+
+longstring & java.lang.String & clob & when a string could be \textgreater then 4000 characters \\ \hline
+
+\hline
+\end{tabular}
+
+note: to create a vector use the following syntax
+
+\begin{verbatim}
+<field name="children" type="com.foo.Person" collection="vector"/>
+\end{verbatim}
+And for an array use \textit{collection=''array''}
+The type refers to the type of each element and the
+collection="vector" makes this a vector.
+

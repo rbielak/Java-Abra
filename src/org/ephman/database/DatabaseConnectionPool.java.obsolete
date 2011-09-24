@@ -1,0 +1,60 @@
+
+/**
+ * Title:        <p>
+ * Description:  <p>
+ * Copyright:	Copyright (c) 2001 Paul Bethe and Richie Bielak<p>
+ * @author 			Tom Maciejewski
+ * @version 1.0
+ */
+package org.ephman.database;
+
+import org.ephman.database.*;
+import java.sql.*;
+/**
+*Databaseconnection pool currently implemented with just one Connection instance
+**/
+public class DatabaseConnectionPool {
+
+	private Connection connection;
+	private static DatabaseConnectionPool theInstance = null ;
+
+	public static DatabaseConnectionPool getInstance(String host, String dbName, String user, String password) throws SQLException {
+
+		if (theInstance == null) {
+			theInstance = new DatabaseConnectionPool (host, dbName, user,  password);
+		}
+		return theInstance;
+
+	}
+
+	public static DatabaseConnectionPool getInstance() {
+
+		return theInstance;
+
+	}
+
+	private DatabaseConnectionPool (String host, String dbName, String user, String password) throws SQLException{
+
+		DatabaseConnector dbcon = new DatabaseConnector(host);
+		dbcon.connect(dbName,user,password);
+		connection = dbcon.getConn();
+		connection.setAutoCommit(false);
+
+	}
+
+	public synchronized Connection getConnection () {
+
+		Connection result = connection;
+		connection = null;
+		return result;
+	}
+
+	public synchronized void  putConnection (Connection con) {
+		connection = con;
+	}
+
+
+
+
+
+}

@@ -1,0 +1,60 @@
+<project name="abra" default="help">
+
+<!-- Load environment variables -->
+<property environment="env"/>
+
+    <property name="user.src" value="org/ephman/examples/user" />
+
+    <property name="outdir" value="${env.ABRA_HOME}/classes"/>
+    <property name="srcdir" value="${env.ABRA_HOME}/src"/>
+
+	<path id="abra.classpath">
+		<pathelement path="${CLASSPATH}" />
+	</path>
+
+	<!-- Build the tool needed to generate code and schema from XML configs -->
+	<target name="compile">
+        <javac classpathref="abra.classpath" destdir="${outdir}" srcdir="${srcdir}" debug="on">
+            <include name="${user.src}/**" />
+        </javac>
+	</target>
+
+<!-- target to copy, compile (assuming 'dbname' is set) --> 
+   <target name="run" depends="compile">
+		<java classpathref="abra.classpath" classname="org.ephman.examples.user.TestUsers" fork="yes">
+			<jvmarg value="-Ddb.props=${env.PWD}/db.props.psql"/>
+			<jvmarg value="-Dxmldir=${env.ABRA_HOME}/src/org/ephman/junit"/>
+		</java>
+   </target>
+
+<target name="generate">
+	<antcall target="re-generate"/>
+</target>
+
+<target name="re-generate" unless="have.gen">
+	<echo message="${have.gen}"/>
+	<java classpathref="abra.classpath"
+		classname="org.ephman.abra.tools.MapToJava" fork="yes" >
+		<arg value="-factories"/>
+		<arg value="-validation"/>
+		<arg value="-facext"/>
+		<arg value="FactoryBase"/>
+		<arg value="-schema"/>
+		<arg value="${env.PWD}/sql/user.sql"/>
+		<arg value="-outdir"/>
+		<arg value="${env.ABRA_HOME}/src"/>
+		<arg value="-xp"/>
+	    <arg value="-verbose"/> 
+		<arg value="xml/user4.xml"/>
+			</java>
+</target>
+
+    <target name="fresh">
+		<delete dir="${outdir}"/>
+		<mkdir dir="${outdir}"/>
+	</target>
+
+    <target name="help">
+      <echo message="generate | compile | run"/>
+    </target>
+</project>

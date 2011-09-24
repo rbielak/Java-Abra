@@ -1,0 +1,54 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Language" content="en-us">
+<title>Abra User Manual</title>
+</head>
+
+<body>
+
+<h1>Running Abra</h1>
+<p>Running Abra is simple, when you have built it as described in the previous
+section. Go <a href="mapfiles.html">here</a> for the format of the map-file.
+
+<p>Command-line option summary:</p>
+<pre>abra [options] [map-file [map-file2 [map-file3] ...]]
+Options:	
+ -outdir &lt;directory&gt;
+ -noclasses (turnoff class generation)
+ -schema &lt;file-name&gt; (generate schema to the specified schema-file)
+ -verify (just verify XML, generate nothing)
+ -factories (make database factories using Java->sql map)
+ -procs (use stored procedures/functions instead of dyn SQL) 
+ -validation generate validators for each class
+ -props &lt;prop-file&gt; use this prop file for everything
+ -verbose to get messages about what is being generated
+ -mega to get every single message (a lot) about what is being generated
+ -supress to print only fatal errors/ nothing else
+ -help to get this print out
+</pre>
+<h3>Examples</h3>
+<blockquote>
+  <pre>abra foo.xml</pre>
+</blockquote>
+<p>runs Abra using the <code>foo.xml</code> file in the current directory, generating classes from this directory.</p>
+<blockquote>
+  <pre>ant -factories -outdir src foo.xml</pre>
+</blockquote>
+<p>runs Abra using the <code>foo.xml</code> map-file in the current directory, generating classes and AbstractFactories from the root $PWD/src.</p>
+<blockquote>
+  <pre>ant -factories -procs -validation -verbose -outdir java -schema schema/foo.sql foo.xml bar.xml</pre>
+</blockquote>
+<p>runs Abra using the <code>foo.xml, bar.xml</code> mapfiles.  The output 
+classes, validators, and factories have a root directory of $PWD/java.  A schema
+file to create the relational tables is $PWD/schema/foo.sql and stored 
+procedures are used by generated factories to insert and update are found in 
+$PWD/schema/foo_procs.sql. Verbose printouts are on.   </p>
+
+<hr>
+<p align="center">Copyright &copy; 2000,2001,2002 Paul Bethe &amp; Richie Bielak All rights
+Reserved.</p>
+
+</body>
+</html>
+

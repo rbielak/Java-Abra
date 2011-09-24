@@ -1,0 +1,104 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Language" content="en-us">
+<title>Abra User Manual</title>
+</head>
+
+<body>
+
+<h2><a name="property">Class</a></h2>
+<h3>Description</h3>
+<p>Define a class across XML, SQL, and Java.</p>
+
+<h3>Parameters</h3>
+<table border="1" cellpadding="2" cellspacing="0">
+  <tr>
+    <td valign="top"><b>Attribute</b></td>
+    <td valign="top"><b>Description</b></td>
+    <td align="center" valign="top"><b>Required</b></td>
+  </tr>
+  <tr>
+    <td valign="top">name</td>
+    <td valign="top">the fully-qualified name of the class (in Java).</td>
+    <td valign="top" align="center">Yes</td>
+  </tr>
+  <tr>
+    <td valign="top">identity</td>
+    <td valign="top">field-name for primary key in database</td>
+    <td valign="middle" align="center" >Yes if a database class ('-factories' is turned on)</td>
+  </tr>
+  <tr>
+    <td valign="top">extends</td>
+    <td valign="top">a java class to extend - must be a class specified in a 
+map-file (or org.ephman.abra.utils.Versioned | Identified).</td>
+    <td valign="middle" align="center" >No</td>
+  </tr>
+  <tr>
+    <td valign="top">implements</td>
+    <td valign="top">a comma seperated list of fully-qualified Java classes to 
+implement.</td>
+    <td valign="middle" align="center" >No</td>
+  </tr>
+  <tr>
+    <td valign="top">descendant</td>
+    <td valign="top">a hand-written class that will extend this one - tells the 
+generated factory to create the instances of 'descendant' using the generic 
+constructor.</td>
+    <td valign="middle" align="center" >No</td>
+  </tr>
+  <tr>
+    <td valign="top">end-date</td>
+    <td valign="top">boolean specifying if end-dateing should be used instead 
+of deleting (Column END_DATE will be added and given a timestamp on delete 
+instead of deleting row).</td>
+    <td valign="middle" align="center" >No (Database-only)</td>
+  </tr>
+  <tr>
+    <td valign="top">cache-type</td>
+    <td valign="top">if set to 'persistent' keep objects cached-indefinitely 
+(Identfied) these are static-data classes; otherwise extend Versioned and do 
+in transaction cache only.</td>
+    <td valign="middle" align="center" >No (will default to 'transacted' and become a Versioned object)</td>
+  </tr>
+  <tr>
+    <td valign="top">abstract</td>
+    <td valign="top">boolean to make this class abstract.</td>
+    <td valign="middle" align="center" >No</td>
+  </tr>
+ <tr>
+    <td valign="top">many-to-many</td>
+    <td valign="top">boolean to make this class define a many-to-many 
+relationship.  Special case where exactly 2 nested field expected each a 
+database class in the map-file.</td>
+    <td valign="middle" align="center" >No</td>
+  </tr>
+
+</table>
+
+<h3>Parameters specified as nested elements</h3>
+<h4>map-to</h4>
+<p>the <a href="mapto.html">map-to</a> node specifies table-names and xml-node 
+names for mapping</p>
+<h4>class-view</h4>
+<p>the <a href="class_view.html">class-view</a> node allows description of data 
+abstractions where mapping/translation can be generated.  The &lt;view&gt; tag 
+is used on a field-by-field basis to specify which fields belong in a view.
+A class may have multiple class-views.</p>
+<h4><a href="description.html">description</a></h4>
+a node with a textual description of this class
+<h4>constraint</h4>
+<p>The <a href="constraint.html">constraint</a> node describes an sql constraint
+ which exists on a set of fields.</p>
+<h4>field</h4>
+<p>The repeating <a href="field.html">field</a> node describes a field.</p>
+<h3>Examples</h3>
+Best to look at an entire <a href="../examples/family.html"/>file</a>.
+
+<hr>
+<p align="center">Copyright &copy; 2000,2001,2002 Paul Bethe and Richie Bielak. 
+All rights
+Reserved.</p>
+</body>
+</html>
+

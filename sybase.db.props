@@ -1,0 +1,5 @@
+database=DBSRV
+host=192.168.132.28
+user=DBSRV1
+password=DBSRV1
+port=4100

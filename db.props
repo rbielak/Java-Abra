@@ -1,0 +1,5 @@
+database=richieb
+host=localhost
+user=richieb
+password=richieb
+port=5432

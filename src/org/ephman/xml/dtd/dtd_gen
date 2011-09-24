@@ -1,0 +1,5 @@
+java JLex.Main dtd.lex
+mv dtd.lex.java Yylex.java
+java java_cup.Main -parser DtdParser < dtd.cup
+# sed -e "s/lr_parser {/lr_parser implements XmlParser {/g" < AbraXmlParser.java > foo.j
+# mv foo.j AbraXmlParser.java

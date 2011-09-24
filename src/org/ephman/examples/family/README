@@ -1,0 +1,9 @@
+In order to run this example:
+	* Build the Abra libraries (Oracle | PSQL)
+	* set your classpath to point to the Abra libraries 
+	     and also the required packages (Jaxp, regexp, Ant)
+	* type 'ant generate' to generate class and Factory/Validator
+	* using an sql tool (eg. sqlplus) login and run the scripts family.sql 
+	    (if '-procs' and using Oracle family_procs.sql as well)
+	* type 'ant run' to run the class Test
+	* TODO: make Test use junit (..was lazy)

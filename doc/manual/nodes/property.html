@@ -1,0 +1,44 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Language" content="en-us">
+<title>Abra User Manual</title>
+</head>
+
+<body>
+
+<h2><a name="property">Property</a></h2>
+<h3>Description</h3>
+<p>Sets a property (by name and value).</p>
+
+<h3>Parameters</h3>
+<table border="1" cellpadding="2" cellspacing="0">
+  <tr>
+    <td valign="top"><b>Attribute</b></td>
+    <td valign="top"><b>Description</b></td>
+    <td align="center" valign="top"><b>Required</b></td>
+  </tr>
+  <tr>
+    <td valign="top">name</td>
+    <td valign="top">the name of the property to set.</td>
+    <td valign="top" align="center">Yes</td>
+  </tr>
+  <tr>
+    <td valign="top">value</td>
+    <td valign="top">the value of the property.</td>
+    <td valign="middle" align="center" >Yes</td>
+  </tr>
+
+</table>
+<h3>Parameters specified as nested elements</h3>
+<h4>NONE</h4>
+<h3>Examples</h3>
+<pre>  &lt;property name=&quot;foo&quot; value=&quot;42&quot;/&gt;</pre>
+<p>sets the property <code>foo</code> to the value &quot;42&quot;.</p>
+any references to ${foo} will be substituted by '42'
+<hr>
+<p align="center">Copyright &copy; 2000,2001,2002 Paul Bethe and Richie Bielak. All rights
+Reserved.</p>
+</body>
+</html>
+

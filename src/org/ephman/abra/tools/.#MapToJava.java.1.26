@@ -1,0 +1,638 @@
+package org.ephman.abra.tools;
+
+
+import org.ephman.xml.*;
+import org.ephman.abra.tools.generators.*;
+import org.ephman.abra.tools.plugins.*;
+import java.io.*;
+import java.util.*;
+
+import org.ephman.utils.*;
+
+/**
+ * read an XML file representing a Java to SQL mapping for 
+ * then generate classes in the current directory (or use -outdir)
+ * ! make sure to give fully qualified class name ie
+ * <code>com.foo.bar.database.User</code> in the map file..
+ * default output is current directory or use -outdir switch
+ * to turn off schema or class generation use the switch -no...
+ * 
+ *
+ * @author Paul M. Bethe
+ * @version 0.0.2
+ */
+
+public class MapToJava extends XmlProcessor {
+	public static final String VERSION_STRING = "0.9.8";
+
+
+	public MapToJava (String odir, boolean schema, boolean classes, 
+					  boolean factories, boolean procs,
+					  boolean useAbraParser) {
+		this (odir, schema, classes, factories, useAbraParser);
+		this.useProcs = procs;
+	}
+	public MapToJava (String odir, boolean schema, boolean classes, 
+					  boolean factories, 
+					  boolean useAbraParser) {
+		super (useAbraParser);
+		outdir = odir;
+		this.makeSchema = schema;
+		this.makeClasses = classes;		
+		this.makeFactories = factories;
+	}
+
+	public static String fileSeperator = "/"; //System.getProperty ("file.seperator");
+		//'/';bb
+
+  	protected static String rootString =   "/";
+  	protected static String windowsRootString =   ":";
+
+	protected static boolean isTopLevelDirectory (String fname) {
+		boolean result = fname.startsWith(rootString);
+		if (!result) {
+			// maybe it's a windows directory
+			result = (fname.length() > 1) && (fname.indexOf (windowsRootString)) != -1;
+		}
+		return result;
+	}
+
+	protected boolean makeSchema;
+
+	protected boolean makeClasses;
+
+	//	protected boolean makeValidators;
+
+	public static boolean makeFactories;
+	protected boolean useProcs;
+
+ 	protected String toImplement = "";
+
+ 	protected String commonMapFile;
+
+	public static String outdir;
+
+	protected static String outSchema = "";
+
+	protected static String facImp = "FactoryBase";
+
+	public static void printHelp () {
+		System.out.println ("Usage: java com.tradinglinx.tools.xml.MapToJava map-file");
+		System.out.println ("\toptions:\n\t\t -outdir <directory>");
+
+		System.out.println ("\t\t-noclasses (turnoff class generation)");
+		System.out.println ("\t\t-schema <file-name> (generate schema to the specified schema-file)");
+		System.out.println ("\t\t-verify (just verify XML, generate nothing)");
+		System.out.println ("\t\t-factories (make database factories using Java->sql map)");
+
+		System.out.println ("\t\t-procs (use stored procedures/functions instead of dyn SQL) ");
+		System.out.println ("\t\t-xp (use the Abra JavaCup based Xml mini-parser instead of Xerces) ");
+		System.out.println ("\t\t-validation generate validators for each class");
+		System.out.println ("\t\t-props <prop-file> use this prop file for everything");
+		System.out.println ("\t\t-verbose to get messages about what is being generated");
+		System.out.println ("\t\t-mega to get every single message (a lot) about what is being generated");
+		System.out.println ("\t\t-supress to print only fatal errors/ nothing else");
+		System.out.println ("\t\t-help to get this print out");
+		System.out.println ("\n\tDEPRECATED: \n");
+		System.out.println ("\t\t-implements <class-name> (going away now xml-tags in map-files)");
+	}
+
+	public static void main (String[] argv) {
+		System.out.println ("Abra generator v" + VERSION_STRING);
+		boolean valid = true;
+		if (argv.length < 1 || (argv.length == 1 && argv[0].startsWith ("-"))) {
+			printHelp ();
+		}
+		else { /* try to run */
+            Vector mapList = new Vector ();
+			// String mapName = "";
+			boolean makeSchema = false;
+			boolean makeClasses = true;
+			boolean makeValidators = false;
+			boolean makeFactories = false;
+			boolean procs = false;
+
+			boolean useAbraParser = false;
+            String toImp = "";
+			String outdir = System.getProperties().getProperty("user.dir");
+			if (argv.length == 1)
+				mapList.addElement (argv[0]);
+			else { // more than one argument
+				for (int i = 0; i < argv.length; i++) {
+					if (argv[i].equals ("-outdir") && i+1 < argv.length) {
+						i++; // look at data..
+						if (isTopLevelDirectory (argv[i]))
+							outdir = argv[i];
+						else
+							outdir += fileSeperator + argv[i];
+					}
+                    else if (argv[i].equals ("-common") && i+1 < argv.length) {
+						i++; // look at data..
+						//                        commonMapFile = argv[i];
+					}
+					else if (argv[i].equals ("-schema") && i+1 < argv.length) {
+						makeSchema = true;
+						i++; // look at data..
+						outSchema = argv[i];
+					}
+					else if (argv[i].equals ("-verbose")) {
+						Debugger.init (Debugger.VERBOSE);
+					}
+
+					else if (argv[i].equals ("-supress")) {
+						Debugger.init (Debugger.ERROR);
+					}
+					else if (argv[i].equals ("-mega")) {
+						Debugger.init (Debugger.ALL);
+					}
+					else if (argv[i].equals ("-procs")) {
+						procs=true;
+						if (i + 1 < argv.length && !argv[i+1].startsWith ("-"))
+							{
+								i++;
+								SchemaGenerator.dbPackageName = argv[i];
+							}							
+					}
+					else if (argv[i].equals ("-xp")) { // use xml parser (Abra)
+						useAbraParser = true;
+					}
+					else if (argv[i].equals ("-help")) {
+						printHelp ();
+						System.exit (0);
+					}
+					else if (argv[i].equals ("-factories")) {
+						makeFactories = true;
+					}
+					else if (argv[i].equals ("-validation"))
+						makeValidators = true;
+					else if (argv[i].equals ("-noclasses"))
+						makeClasses = false;
+                    else if (argv[i].equals ("-props")) {
+
+                        try {
+                            File f = new File (argv[i+1]);
+                          	Properties props = new Properties ();
+                          	props.load (new FileInputStream (f));
+                            makeClasses = !(new Boolean(props.getProperty("noclasses", "false")).booleanValue());
+                            outSchema = props.getProperty("schema");
+                            if (Checks.exists (outSchema))
+                                makeSchema = true;
+                            makeFactories = new Boolean(props.getProperty("factories", "false")).booleanValue();
+							procs = new Boolean(props.getProperty("procs", "false")).booleanValue();
+							makeValidators = 
+								new Boolean(props.getProperty("validate", "false")).booleanValue();
+							if (new Boolean(props.getProperty("useAbraParser", "false")).booleanValue())
+								useAbraParser = true;
+                            String mapFiles = props.getProperty("files", "");
+
+                            String tmp = props.getProperty("outdir", "");
+                            if (isTopLevelDirectory(outdir))
+                                outdir = tmp;
+
+
+                            mapList.addAll (Tokenizer.tokenize (mapFiles, ";", "'"));
+
+                            i = argv.length;
+                        } catch (Exception e) {}
+                    }
+                    else if (argv[i].equals ("-verify")) {
+                        makeClasses = false;
+                        makeSchema = false;
+						makeFactories = false;
+                    }
+					else // must be map name
+						mapList.addElement(argv[i]);
+				}
+            }
+			try {
+				MapToJava mtj = new MapToJava (outdir, makeSchema, makeClasses,
+											   makeFactories, procs,
+											   useAbraParser);
+				generatorHandler = new PluginGeneratorHandler ();
+				if (makeValidators)
+					generatorHandler.registerGenerator (new ValidatorGenerator ());
+				if (useAbraParser) 
+					Debugger.trace ("Using Abra XMLParser", Debugger.SHORT);
+				for (int i =0; i < mapList.size(); i++) {
+					String mapName = (String)mapList.elementAt(i);
+					Debugger.trace ("***Mapping file: " + mapName, Debugger.SHORT);
+					mtj.applyRules(mtj.mapXMLFile (mapName,false), mapName);
+				}
+				if (mapList.size() > 0)
+					mtj.generateAll();
+			}
+			catch (XmlException e) {
+				e.printStackTrace ();
+				valid = false;
+			}
+			catch (SchemaException se) {
+				System.err.println("*** Invalid schema:" + se.toString()  + "\nerror= " + se.getMessage());
+				se.printStackTrace();
+				valid = false;
+			}
+			catch (Exception e) {
+				System.err.println("*** Parsing failed:" + e.toString()  + "\nerror= " + e.getMessage());
+				e.printStackTrace();
+				valid = false;
+			}
+			if (valid && mapList.size() > 0) {
+				try {
+					Debugger.trace ("Success", Debugger.SHORT);
+					if (!(makeClasses || makeSchema)) Debugger.trace ("XML verified", Debugger.SHORT);
+					if (makeClasses) Debugger.trace ("Classes generated in " + outdir, Debugger.SHORT);
+					if (makeSchema) {
+						Debugger.trace ("Schema file '" + outSchema + "' written", Debugger.SHORT);	   
+					}
+				} catch (SchemaException se) { // non expected 
+				}
+			}
+			else 
+				System.exit (1);
+		}
+		
+	}
+
+	protected JClass currentClass = null;
+
+	protected JField currentField = null;
+
+	private static PluginGeneratorHandler generatorHandler;
+
+	protected HashMap classTree = new HashMap ();
+
+	private boolean inFieldNode = false;
+
+    public HashMap getClassTree () { return this.classTree; }
+
+	public void addMapFile (String filePath) throws Exception {
+		// Do not validate XML - we have not DTD
+		applyRules (mapXMLFile (filePath, false), filePath);
+	}
+
+	public static PropertyTable propertyTable = null;
+	String PROPERTY_TAG = "property";
+	String GENERATOR_TAG = "generator";
+	String CLASS_IMPLEMENTS_TAG = "class-implements"; // all classes implement these
+	String CLASS_GENERATOR_TAG = "class-generator";
+	HashSet ignoreTags = new HashSet ();
+
+	{
+		ignoreTags.add (PROPERTY_TAG);
+		ignoreTags.add (GENERATOR_TAG);
+		ignoreTags.add (CLASS_IMPLEMENTS_TAG);
+		ignoreTags.add (CLASS_GENERATOR_TAG);
+	}
+	
+
+	void addGenerators (Vector gens, String mapFile) throws SchemaException {
+		for (int i=0; gens.size () > i; i++) {
+			XmlNode n = (XmlNode)gens.elementAt (i);
+			addGenerator (n, mapFile);
+		}
+	}
+	void addGenerator (XmlNode n, String mapFile) throws SchemaException 
+	{
+		String className = getAttribute (n, "name");
+		Generator p = null;
+		try {
+			p = (Generator)Class.forName(className).newInstance ();
+		} catch (Exception e) {
+			e.printStackTrace ();
+			throw new SchemaException (e.getMessage (), mapFile);
+		}
+		generatorHandler.registerGenerator (p);
+		if (p instanceof ClassGenerator)
+			TypeMapper.setObjectMap (((ClassGenerator)p).getTypeMap ());
+		Debugger.trace ("Registered generator " + className,
+						Debugger.SHORT);
+	}
+
+	protected String getAttribute (XmlNode thisNode, String attrName) {
+		return propertyTable.replace (thisNode.getAttribute (attrName));
+	}
+
+	protected void applyRules (XmlNode thisNode, String mapName) throws
+        XmlException, 
+		IOException, 
+		SchemaException {
+		
+		
+		String thisName = thisNode.getName ();
+		if (thisName.equals ("mapping")) {
+			propertyTable = new PropertyTable ();
+			propertyTable.addProperties (thisNode.getChildNodes (PROPERTY_TAG), mapName);
+
+			if (generatorHandler != null) {
+				addGenerators (thisNode.getChildNodes (GENERATOR_TAG), 
+							   mapName);
+				
+				XmlNode n = getOneNode (thisNode, CLASS_GENERATOR_TAG, mapName);
+				if (n != null) {
+					makeClasses = false;
+					addGenerator (n, mapName);
+				} else 
+					TypeMapper.setObjectMap (new JavaClassGenerator ("",' ',"").getTypeMap ());
+			}
+
+			recurseOnChildList (thisNode.getChildNodes (), mapName);
+			setCompositeLinks ();
+
+
+			XmlNode cls_imp = getOneNode (thisNode, CLASS_IMPLEMENTS_TAG, mapName);
+			if (cls_imp != null)
+				toImplement = getAttribute (cls_imp, "implements");
+
+			//generateAll ();
+		}
+		else if  (thisName.equals ("map-to")) {
+			String currentTableName = getAttribute (thisNode, "table"); // also need to make factories
+			if (!currentTableName.equals (""))
+				currentClass.setTableName (currentTableName);
+            else { // try "query"
+                String query = getAttribute (thisNode, "query");
+                if (!query.equals("")) {
+                    currentClass.setQuery(query);
+                    currentClass.setVersioned(false);
+                }
+		    	else { // try xml..
+			    	String xmlName = getAttribute (thisNode, "xml"); // also need to make factories
+				    currentClass.setXmlNodeName (xmlName); // "" is OK will be ignored..
+			    }
+            }
+		}
+		else if  (thisName.equals ("class-view")) {
+			String formatName = getAttribute (thisNode, "format");
+			String viewName = getAttribute (thisNode, "name");
+            if (!Checks.exists(formatName))
+                throw new SchemaException ("ephman.abra.tools.missingreqd",
+                        new Object[]{"'format'", "node <class-view>"});
+            if (!Checks.exists(viewName))
+                throw new SchemaException ("ephman.abra.tools.missingreqd",
+                        new Object[]{"'name'", "node <class-view>"});
+
+			JView jv = currentClass.getView (formatName);
+			if (jv == null) {
+				jv = new JView (viewName, formatName);
+				currentClass.addView (jv);
+			}
+			else {
+				//jv.setFormatName (formatName);
+				jv.setViewName (viewName);
+			}
+		}
+		else if (thisName.equals ("class")) {
+			//			System.out.println (thisNode.toXml ());
+			String fullClassName = getAttribute (thisNode, "name");
+			//			System.out.println ("Transforming " + fullClassName);
+			int split_index = fullClassName.lastIndexOf ('.');
+			String currentClassName = split_index == -1 ? fullClassName :
+				fullClassName.substring (split_index + 1);
+			String packageName = split_index == -1 ? "" :
+				fullClassName.substring (0, split_index);
+			String extendsClass = getAttribute (thisNode, "extends");
+			String impl = getAttribute (thisNode, "implements");
+            String view = getAttribute (thisNode, "view");
+			String descendant = getAttribute (thisNode, "descendant");
+			String endDate = getAttribute (thisNode, "end-date");
+			String cache_type = getAttribute (thisNode, "cache-type");
+			String abstractDef = getAttribute (thisNode, "abstract");
+			String inlineOnly = getAttribute (thisNode, "inline-only");
+
+			currentClass = new JClass (currentClassName, packageName);
+			currentClass.setSchemaFileName (mapName);
+			currentClass.setImplements (impl);
+            currentClass.setViewName (view);
+			currentClass.setDescendantName (descendant);
+			currentClass.setAbstract (abstractDef != null && abstractDef.equalsIgnoreCase ("true"));
+			currentClass.setInlineOnly (inlineOnly != null && inlineOnly.equalsIgnoreCase ("true"));
+			
+			currentClass.setVersioned (!cache_type.equals ("persistent"));
+			currentClass.setEndDate (endDate != null && endDate.equalsIgnoreCase ("true"));
+			String primaryKey = getAttribute (thisNode, "identity");
+			currentClass.setPrimaryKeyJava (primaryKey);
+			if (getAttribute (thisNode, "many-to-many").equals ("true")) {
+				currentClass.setManyToMany ();
+				// many-to-many classes do not need version numbers
+				currentClass.setVersioned(false);
+			}
+
+			currentClass.setParentClassName (extendsClass);
+
+			recurseOnChildList (thisNode.getChildNodes (), mapName);
+
+			JClass prevEntry = (JClass)classTree.get (fullClassName);
+			if (prevEntry != null)
+				Debugger.trace ("ERROR: class - " + fullClassName + " in " + prevEntry.getSchemaFileName ()
+								+ "\n\tbeing replaced by class in file " + currentClass.getSchemaFileName (),
+								Debugger.ERROR);
+			classTree.put (fullClassName, currentClass);
+			if (generatorHandler != null)
+				generatorHandler.addDefault (currentClass);
+		}
+		else if (thisName.equals ("field")) {
+			//			System.out.println (thisNode.toXml ());
+			String fieldName = getAttribute (thisNode, "name");
+			String fieldType = getAttribute (thisNode, "type");
+
+
+			TypeMap typeMap = TypeMapper.getType (fieldType);
+			if (typeMap.isComposite ())
+				currentField = new JCompositeField ();
+			else
+				currentField = new JField ();
+
+      // TODO: check here that valid collection type is supplied
+      String collectionType = getAttribute (thisNode, "collection");
+      if ((collectionType != null) && (collectionType.length() > 0)) {
+        currentField.setCollection(true);
+        currentField.setCollectionType(collectionType);
+      }
+
+			currentField.setJavaName (fieldName);
+			currentField.setMapFileType (fieldType);
+			currentField.setDkType (typeMap);
+			//			setObjectType (currentField, fieldType);
+
+			String reqd = getAttribute (thisNode, "required");
+			if (reqd != null && reqd.equals ("true")) currentField.setRequired ();
+
+			String len = getAttribute (thisNode, "len");
+			currentField.setLength (len);
+			inFieldNode = true;
+			recurseOnChildList (thisNode.getChildNodes (), mapName);
+			inFieldNode = false;
+
+			if (currentField.getJavaName ().equals (currentClass.getPrimaryKeyJava ()))
+				currentClass.setPrimaryKey (currentField.getSqlName ());//set the java name
+			//			currentField.setSqlType (findSqlType (fieldType, reqd, len, currentClass.getSchemaFileName ()));
+			currentClass.addField (currentField);
+		} else if (thisName.equals ("sql")) {
+			//			System.out.println (thisNode.toXml ());
+			String tmpName = getAttribute (thisNode, "name");
+			if (tmpName != null && !tmpName.equals(""))
+				currentField.setSqlName (tmpName);
+			String un = getAttribute (thisNode, "unique");
+			currentField.setUnique (un != null && un.equals ("true"));
+			currentField.setConstraintName (getAttribute (thisNode, "constraint-name"));
+			currentField.setConstraint (getAttribute (thisNode, "constraint"));
+			if (currentField instanceof JCompositeField) {
+				JCompositeField jcf = (JCompositeField)currentField;
+				String inl = getAttribute (thisNode, "inline");
+				if (inl != null && inl.equals ("true")) {
+					jcf.setInline ();
+					jcf.setPrefix (getAttribute (thisNode, "prefix"));
+				}
+			}
+		} else if (thisName.equals ("description")) {
+			if (!inFieldNode)
+				currentClass.setClassDescription(thisNode.getText ());
+			else
+				currentField.setDescription (thisNode.getText ());
+		} else if (thisName.equals("xml")) {
+            String el = getAttribute (thisNode, "node");
+            currentField._xmlAttribute = el.equals("attribute");
+			el = getAttribute (thisNode, "marshal");
+			//System.out.println ("'" + el + "'");
+			currentField._noMarshal = (el.equals("false"));
+			//System.out.println (currentField._noMarshal);
+        } else if (thisName.equals("view")) {
+			String viewFormat = getAttribute (thisNode, "foreign-view");
+			boolean asView = true;
+			if (!Checks.exists (viewFormat)) {
+				viewFormat = getAttribute (thisNode, "foreign-field");
+				asView = false;
+                if (!Checks.exists (viewFormat))
+                    asView = true;
+			}
+			Vector formats = Tokenizer.tokenize (getAttribute (thisNode, "in"), ",", "'");
+			for (int i=0; formats != null && i < formats.size (); i++) {
+				String formatName = (String)formats.elementAt (i);
+				currentClass.addToView (formatName, currentField, viewFormat, asView);
+			}
+        }
+		else if (thisName.equals("constraint")) {
+			String name = getAttribute (thisNode, "name");
+			String type = getAttribute (thisNode, "type");
+			String cons = thisNode.getText ();
+				//thisNode.getChildNodes().item(0).getNodeValue().trim ();
+			currentClass.addConstraint (new JConstraint (name, type, cons));
+		}
+		else if (thisName.equals("index")) {
+			String name = getAttribute (thisNode, "name");
+			String cons = thisNode.getText ();
+				//thisNode.getChildNodes().item(0).getNodeValue().trim ();
+			currentClass.addIndex (new JIndex (name, cons));
+		}
+		else if (!ignoreTags.contains (thisName)) {
+			Debugger.trace ("node type " + thisName + " is being saved - " 
+							+ (inFieldNode ? "fieldLevel" : "classLevel"),
+							Debugger.ALL);
+			if (generatorHandler != null) {
+				if (inFieldNode)
+					generatorHandler.handleFieldLevelNode (thisName, propertyTable.replaceAll (thisNode.getHashedAttributes ()), currentClass, currentField);
+				else
+					generatorHandler.handleClassLevelNode (thisName, propertyTable.replaceAll (thisNode.getHashedAttributes ()), currentClass);
+			}
+			// ?? bad
+		}
+	}
+
+
+
+	public void generateAll () throws IOException, SchemaException {
+		System.out.print ("Database is set to ");
+		System.out.println (FactoryGenerator.DB_NAME);		
+		ClassGenerator class_gen = new JavaClassGenerator (outdir, fileSeperator.charAt(0), toImplement);
+		FactoryGenerator fact_gen = new FactoryGenerator (outdir, fileSeperator.charAt (0), facImp, useProcs);
+		TypeMapper.setDbMap (fact_gen.getTypeMap (), fact_gen.DB_NAME);
+		//		ValidatorGenerator val_gen = new ValidatorGenerator (outdir, fileSeperator);
+		SchemaGenerator sch_gen = null;
+		if (this.makeSchema) {
+			if (!isTopLevelDirectory (outSchema))
+                		outSchema = outdir + fileSeperator + outSchema;
+			sch_gen = new SchemaGenerator (outSchema);
+	        }
+
+		Iterator cls = classTree.values().iterator();
+		while (cls.hasNext()) {
+		    JClass currentClass = (JClass)cls.next();
+			if (this.makeClasses && !currentClass.isManyToMany())
+				class_gen.generate (currentClass);
+
+			//if (this.makeValidators && !currentClass.isManyToMany())
+			//val_gen.generate (currentClass);
+			generatorHandler.generate (currentClass);
+			
+			if (currentClass.isLeaf () && !currentClass.isInlineOnly ()) {
+				//System.out.println (currentClass.getClassName () + " is a leaf.");
+				if (this.makeFactories) {
+					//System.out.println ("\tgenerating factory");
+					fact_gen.generate (currentClass);
+				}
+				if (this.makeSchema && !currentClass.isQuery()) {
+					sch_gen.generate (currentClass);
+				}
+			}
+        }
+		if (sch_gen != null) sch_gen.close ();
+		generatorHandler.close (); // close all generators
+	}
+
+	private void setCompositeLinks () {
+		Iterator cls = classTree.values().iterator();
+		while (cls.hasNext()) {
+		    JClass currentClass = (JClass)cls.next();
+			JClass superClass = (JClass)classTree.get (currentClass.getParentClassName ());
+			currentClass.setParentClass (superClass);
+			currentClass.resetFieldIteration();
+			while (currentClass.hasMoreFields()) {
+				JField jf = currentClass.getNextField();
+				if (jf instanceof JCompositeField) // link composite field
+					((JCompositeField)jf).setJClass ((JClass)classTree.get (jf.getObjectType ()));
+			}
+			if (currentClass.isLeaf ()) {
+				Vector allFields = new Vector (currentClass.getAllFields ().values());
+				for (int i = 0; i < allFields.size (); i++) {
+					JField jf = (JField)allFields.elementAt (i);
+					if (currentClass.getPrimaryKeyJava ().equals (jf.getJavaName ()))
+						currentClass.setPrimaryKey (jf.getSqlName ());
+				}
+			}
+		}
+		// now set all views to be right..
+		cls = classTree.values().iterator();
+		while (cls.hasNext()) {
+			JClass currentClass = (JClass)cls.next();
+			Iterator views = currentClass.getViewList ();
+			while (views.hasNext ()) {
+				JView view = (JView)views.next ();
+				String name = view.getFormatName ();
+				JClass jc = currentClass.getParentClass ();
+				JView jv = null;
+
+				while (jc != null && jv == null) {
+					jv = jc.getView (name);
+					jc = jc.getParentClass ();
+				}
+				view.setSuperView (jv);
+			}
+		}
+	}
+
+
+	public XmlNode getOneNode (XmlNode thisNode, String tagToGet, String mapName) 
+		throws SchemaException {
+
+		XmlNode result = null;
+		Vector v = thisNode.getChildNodes (tagToGet);
+		if (v != null && v.size () > 0) {
+			if (v.size () == 1) {
+				result = (XmlNode)v.elementAt (0);
+			} else
+				throw new SchemaException ("Too many <" +tagToGet+
+										   "> tags only one allowed", mapName);
+		}
+		return result;
+	}
+
+}

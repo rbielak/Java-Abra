@@ -1,0 +1,477 @@
+\documentclass[10pt,openany]{book}
+
+
+\title{Building Java Classes and a Database Persistence Layer Using
+Code Generation - The Abra Project}
+\author{Paul M. Bethe}
+\date{\today}
+\pagestyle{headings}
+\begin{document}
+\frontmatter
+\maketitle
+\chapter[Acknowledgments]{}
+\section*{Thanks!}
+The main programmers involved w/ The Abra project and its use:
+\begin{description}
+\item[Richie Bielak] \textless richieb@netlabs.net\textgreater
+\item[Theodor Zagorin] \textless tzagorin@yahoo.com\textgreater
+\item[Chris Marty] \textless cmarty@yahoo.com\textgreater
+\item[Paul Bethe] \textless pmbethe@yahoo.com\textgreater
+\end{description}
+
+\chapter[Preface]{}
+\section*{Preface}
+Just a little write up of the Code generator tools first developed for the
+TradingLinx Merlin system and later Open-Sourced onto
+http://abra.sourceforge.net.  Chapters: 
+\begin{description}
+\item[Chapter 1] A How-To for learning and using the code generation.
+
+\item[Chapter 2] For those interested in the conceptual grounding and
+history of the Abra project.
+
+\item[Chapter 3] For Developers: the core Abra classes and the
+framework of the database and tools packages 
+
+\item[Appendices] All the options for command-line runs, and elements
+that can be used in XML-files 
+\end{description} 
+
+\nopagebreak
+\tableofcontents
+
+\mainmatter
+
+\chapter{A Code Generation How-To}
+\section{Intro}
+This is a quick walk through use of the code generator from a basic
+file to database schema and factories, adding database constraints and
+finally creating abstracted data views of classes.
+
+
+Also commonly referred to as Dave Knull\footnote{a bad joke that started from \texttt{/dev/null}}
+the code generator is growing to be a very powerful tool, hopefully
+all of the features will be understood after this chapter.
+Note: this paper assumes you have a general knowledge of
+XML\footnote{See \textit{XML Pocket Reference} by Robert Eckstein} and
+Java\footnote{Try \textit{Elements of Java for the Principled Programmer} Bailey,
+Duane.}.
+
+\section{In the Beginning}
+This tutorial will walk you through all the pieces of an XML map-file
+that you can add, using the class User as an example.
+
+\subsection{MapToJava aka Dave Knull}
+All code generation starts with one class \texttt{org.ephman.abra.tools.MapToJava}.
+First you need the entire package compiled then you can
+run
+\begin{description}
+\item \texttt{java org.ephman.abra.tools.MapToJava \textless
+your-map-file\textgreater}\footnote{For a complete listing of the flags
+see Appendix A}
+\end{description}
+This file can be run on XML documents conforming to the DTD found in
+org/ephman/abra/tools/codegen.dtd. (Also listed in the Appendix)
+
+\subsection{Basic Class Description}
+Our example will walk through creation of a Class User, and building
+upon each step we can go from a simple class description to generating
+a complex data storage persistence layer.  The first entry to create a user goes as follows
+\begin{verbatim}
+  <class name="org.ephman.examples.user.generated.User">
+    <description>This class represents a User</description>
+    <field name="userId" type="string" required="true"/>
+    <field name="userName" type="string"/>
+  </class>
+\end{verbatim}
+This describes a class and it's fields\footnote{A full description of
+the dated is in Appendix A}.  Running MapToJava on this XML
+file will produce a java file in
+org/ephman/examples/user/generated/ called
+User.java.\footnote{The default output directory is . to output to a
+different base path then the working Dir use -outdir switch (see
+appendix A)}  This
+class will have two protected member variables \_userId and
+\_userName, both of type java.lang.String\footnote{see Appendix C for
+a list of supported XML fields and their Java/SQL mappings}. Also public routines
+\begin{verbatim}
+  public String getUserId ()
+  public void setUserId (String foo)
+  public String getUserName ()
+  public void setUserName (String foo)
+\end{verbatim}
+will be generated for get/set operations on these fields.
+
+Also note the 'description' tag this text is placed at the top of the
+class (good for Javadoc), and \emph{required="true"} was placed on the
+userId field.  This won't generate any extra Java code but is a
+directive to the XML Marshaller (and SQL, Validation) that this field must exist.
+
+\section{Storing in the Database}
+\subsection{Simple storage}
+Okay, so we have a class \texttt{User} but now we want to get it stored in the
+database.  The first step for all our database classes is to add a
+field called 'oid' of type integer (required by Abra) and specify that
+it is the identity column.
+
+This would look something like this.
+\begin{verbatim}
+<!-- property nodes can be used to define common variables like
+packages and regular expressions -->
+  <property name="user.pkg" value="org.ephman.examples.user.generated"/>
+
+  <class name="${user.pkg}.User"
+          identity="oid">
+    <description>This class represents a User</description>
+    <field name="oid" type="integer"/>
+    ...
+  </class>
+\end{verbatim}
+This piece of code issues the directive that the primary key will be
+'oid'(\texttt{identity} statement).
+
+
+Next we need to describe the database schema of the class \texttt{User}.  This
+consists of two parts:  putting a \textit{map-to} element inside the class,
+which gives the name of the table that user should be stored in
+and assigning column names to each field using the \textit{sql} element.
+\begin{verbatim}
+  <class name="${user.pkg}.User"
+          identity="oid">
+    <description>This class represents a User</description>
+    <map-to table="example_user"/>
+
+    <field name="oid" type="integer">
+      <sql name="user_oid"/>
+    </field>
+    <field name="userId" type="string" len="32">
+      <sql name="user_id"/>
+    </field>
+    <field name="userName" type="string" len="80">
+      <sql name="user_name"/>
+    </field>
+  </class>
+\end{verbatim}
+This defines the database table to be \textit{example\_user} and maps each field to
+their column(so the Java field userName maps to USER\_NAME in the DB).
+\marginpar[left]{this will also affect later validation}
+Notice that the 'len' attribute has been added to specify how long
+each string should be. 
+
+\subsection{Naming Conventions}
+At this point running MapToJava with the options \textsf{-factories} and
+'-schema \textless file-name\textgreater'  will create the usual java files and in the
+same packages as each file create a Factory.  The naming convention is
+Abstract\textless file-name\textgreater Factory.java : so User.java
+would be accompanied by AbstractUserFactory.java.
+
+The abstract factory contains a listing of all the java/sql field
+mappings, the table name, and pre-coded insert, update, and delete strings.
+Abstract routines from FactoryBase like (getTableName(), etc.) are
+implemented.\footnote{a sample of the actual AbstractUserFactory is in
+Appendix D}  Also found are the names of the generated stored
+procedure name and how to call it (if the '-procs' switch was used in
+generation).  The methods getByOid, and store are also implmented.
+
+
+The next step is the declared factory.  One needs to define a factory
+(usually \textless class-name\textgreater Factory), to extend the
+abstract Factory and implement any methods you need.  To UserFactory
+we would write any desired queries as follows.
+\begin{verbatim}
+	public User getUserById (DatabaseSession dbSess, String id) throws
+SQLException {
+		return (User)super.getObject (dbSess, super.userId, id);
+	}
+\end{verbatim}
+It's that simple.
+\subsection{Complex Storage and Heavy Lookups/Storage}
+What if the user were to have a reference to a Company object which
+represents the company that the user works for.  The standard database
+method is to use a 'foreign-key'.  Simply put, if the Company has an
+oid of n then a row in the user table for company\_oid's would need to
+store n as this users value.
+
+
+This is handled by the persistence layer for each object which has a
+foreign table the primary key (oid) is stored in an
+foreign\_oid column as an int.  HOWEVER, standard object lookups are
+light - meaning they don't retrieve the foreign objects.  So simple
+retrieval of a User his company oid will be set to n but the Company
+object will be null.
+
+To handle heavy lookups one must override a routine in the factory
+called \emph{deepRetrieval}.  The code in our UserFactory might look
+like this.
+\begin{verbatim}
+...
+  protected void deepRetrieval (DatabaseSession dbSess,
+                 Identified item) throws SQLException {
+    User user = (User)item;
+    user.setCompany (CompanyFactory.getInstance ().getByOid (dbSess,
+            user.getCompanyOid ());
+  }
+...
+\end{verbatim}
+Notice that we call CompanyFactory which you would have to write to extend
+the abstract factory and implement the singleton pattern.  Also
+note that the only XML entry looked like.
+\begin{verbatim}
+  <field name="company"
+      type="org.ephman.examples.user.generated.Company">
+    <sql name="company_oid"/>
+  </field>
+\end{verbatim}
+And from this both a field for company and an int companyOid were placed
+in the Java file and only 'int company\_oid' was created in schema.
+
+
+For storage purposes there are two routines, deepStorage and
+preStorage.  'deepStorage' handles things like Vectors where each
+entry has an oid column referencing back to this object, and thus
+needs this object to be stored first.  'preStorage' is for Objects
+that the current one depends on: for a User to store his companies oid in
+the db, the Company object must be stored first, so the 'preStorage'
+routine allows you to save any objects which are referenced in a
+single-entry in this object.
+\subsection{Many 2 Many}
+Handling many to many relationships between two classes(each with its own
+table) requires a third table to store the relationship.  The code
+generator will handle this and provide strings to handle inserting a
+relationship as well as lookups each way(So for User to Group a lookup
+getting all the Users in a Group, or all the Groups for a given User).
+\begin{verbatim}
+ <class name="${user.pkg}.UserToGroup" 
+      many-to-many="true" 
+      factory-ext="ManyToManyFactoryBase"
+      >
+    <map-to table="merlin_user_desk"/>
+
+  <field name="user" type="${user.pkg}.User"
+     >
+    <sql name="user_oid"/>
+  </field>
+  <field name="desk" type="${user.pkg}.Group">
+	<sql name="desk_oid"/>
+  </field>
+ </class>
+\end{verbatim}
+
+
+Note: the field many-to-many was set to true : and the base factory
+was set to ManyToManyFactoryBase.
+
+\subsection{Adding constraints}
+Now that we have a class, which is stored in the DB we might like
+to add a field and constrain it to certain values.  An example would
+be if we added a field called age which was an int, this field must be
+\textgreater = 0 so an entry to place this constraint looks like this:
+\begin{verbatim}
+  <field name="age" type="integer">
+    <sql name="user_age" constraint-name="user_age_gte_zero"
+        constraint=">= 0"/>
+  </field>
+\end{verbatim}
+This code will add a constraint on age such that an exception is
+thrown and the operation not performed if someone tries to set an age
+less than zero.
+\paragraph{Referential constraints} are used to guarantee that if a User works
+at ``company\_oid=7'' that in the Company table there is a row which
+has ``oid=7''.  These are automatically added on schema generation,
+however the names default to a mix of the class and field name.
+Instead one can give better names by using the 'constraint-name'
+attribute, but no entry is required in the 'constraint' attribute.
+
+\subsection{End-dating}
+
+Some objects like users, are referenced all over the database, and
+when a user is removed from the system it is important not to delete
+them.  Instead we must keep the user (in order for those things that
+reference him to still be valid), and end-date them.  This is done by
+adding a time-stamp to an end-date column which represents the time at
+which the user was removed from the system.
+
+To do this you simply add an attribute to the \textit{class} element.
+
+\begin{verbatim}
+<class name="org.ephman.examples.user.generated.User"
+      identity="oid" end-date="true">
+  ... 
+\end{verbatim}
+
+The \textit{end-date="true"} will specify to have an end-date column -
+and the extended factory now becomes \emph{EndDateFactoryBase} which
+extends FactoryBase and has extra code which delimits searches for
+end-date=null, and when \emph{delete} is called the object is
+end-dated(not removed).
+
+\subsection{In-lining}
+Suppose we wished to add an Address to a User.  But a type like
+Address has a one to one relationship with User and there is no need
+to store it in a separate table in the database, the directive
+\textit{inline=''true''} will define the columns of address inside of
+the user table.  The \textit{prefix} tag allows an optional prefix to
+be concatenated to the columns defined in the inline-type
+\begin{verbatim}
+<class name="${user.pkg}.Address"
+      identity="oid">
+   <!-- oid is defined but not used when inlined -->
+    <field name="oid" type="integer">
+       <sql name="ad_oid" />
+    </field>
+	<field name="street" type="string" len="64">
+      <sql name="ad_street" />
+    </field>    
+    <field name="city" type="string" len="20">
+      <sql name="ad_city" />
+    </field>
+    <field name="state" type="string" len="2">
+      <sql name="ad_state" />
+    </field>
+</class>
+\end{verbatim}
+\marginpar{the prefix allows multiple in-lines of the same type}
+To include some address in class user the syntax would be.
+\begin{verbatim}
+<class name="${user.pkg}.User"
+      identity="oid" end-date="true">
+  ... 
+   <field name="homeAddress" type="${user.pkg}.Address" >
+      <sql name="ad" inline="true" prefix="home" />
+    </field>
+   <field name="workAddress" type="${user.pkg}.Address" >
+      <sql name="ad" inline="true" prefix="work" />
+    </field>
+...
+\end{verbatim}
+
+\section{Abstracting data views}
+In order to allow changes to database code and classes without messing
+up any published API and our internal components (Web/Fix/Swift/..) that send
+messages back and forth to a central server, we create views.  These views are
+simple data extractions of the classes they represent containing any
+subset of the fields defined in the XML.
+\subsection{Adding a view}
+Suppose the class User has grown to 40 different fields, but we want a
+lookup of several users to pass to someone(maybe the list of users at
+a company).  Now what if all that was needed was the name, Id and
+email of each user.  If the list is hundreds long and we are
+Serializing (or marshaling to XML) all 40 fields for each user, we
+are seriously hurting performance.
+
+
+The solution is to pass only the fields we need in Views of the User.
+to do so we do the following
+
+\begin{verbatim}
+<property name="views.pkg" value="org.ephman.examples.user.views"/>
+
+<class name="${user.pkg}.User" ... >
+
+    <class-view name="${views.pkg}.UserQuickView"
+format="quick" />
+...
+    <field name="userId" type="string">
+      <view in="quick"/>
+    </field>
+...
+</class>
+\end{verbatim}
+This will generate a class representing an abstraction of the class
+User, which has the field \emph{userId}.  ALSO a routine
+will be added to User called \textit{createQuickView ()}. This routine
+operates on \textit{this} and returns a \textit{UserQuickView} with
+userId set to the same value in the User object.  Also you can create
+a new User with a UserQuickView as the initialization parameters
+(ie. from a new User form).
+\begin{verbatim}
+UserQuickView initUser -> passed in from a separate service..
+User newUser = new User ();
+newUser.initializeFromView (initUser);
+\end{verbatim}
+\subsection{Composite views}
+
+A composite field may be added to a view in two ways.
+\begin{itemize}
+\item A single field is needed i.e. a user has a company
+that is of type Company - but in a blotter view the only field needed is the
+\textit{companyName}.  Thus, in the view we specify the
+\textit{foreign-field} attribute:
+\begin{verbatim}
+    <field name="company" type="${user.pkg}.Company">
+      <view in="quick" foreign-field="companyName"/>
+    </field>
+...
+\end{verbatim}
+note: that \textit{companyName} needs to be a valid field in the
+Company object.
+\item More than one field is needed - so a view of the composite field
+is required.   The \textit{foreign-view} attribute is used instead and
+a view that exists in the other class must be specified.  \marginpar{this implies that the view 'simple' has been defined in the
+Company class}
+
+\begin{verbatim}
+    <field name="company" type="${user.pkg}.Company">
+      <view in="quick" foreign-view="simple"/>
+    </field>
+...
+\end{verbatim}
+
+\end{itemize}
+
+\section{Validation}
+Another crucial part of designing a large system is the ability to
+validate your data classes.  For simple validations like mandatory
+fields, string length, and regular expression matching, Abra allows
+ \textit{validate} nodes for each field.  Combined with the generation
+switch '-validation' Abra will generate classes of the name
+Base\textless class-name\textgreater Validator in the same package as
+the class is 
+generated.  
+
+
+For 'deepValidation' - that is validating composite sub-objects and for
+complicated multi-field, or DB lookups these must be written by hand.
+
+
+\subsection{Mandatory, Length}
+Fields can be defined mandatory at two levels.  On the 'field' node the
+tag \textit{required=true}, this will add a 'NOT NULL' directive do
+the database schema and assert that this field exists on validation.
+If the field is required for business reasons, but needs to be stored
+in any case the \textit{required=true} tag can be added in the
+'validate' node.
+\begin{verbatim}
+...
+<field name="workAddress" >
+   <sql name="w_add" inline="true" prefix="work"/>
+   <validate required="true" />
+</field>
+...
+\end{verbatim}
+Length validations are generated automatically for each string using
+the \textit{len=''\textless size\textgreater ''} tag.
+
+\subsection{ValidationExceptions}
+When a validator encounters a failed assertion it continues processing
+that object, then throws a validation exception containing a Vector of
+FieldErrors.  The method getErrorCode will return an int which
+defaults to the values in abra.validation.ValidationCodes
+(LENGTH\_FAILED, MANDATORY\_FAILED, REGEXP\_FAILED).  \marginpar[left]{If
+the field is a String the error will be StringError} For the regular
+expressions this can be overriden by using the \textit{code=} tag and
+a new error name can be generated by using the \textit{name=} tag.
+
+\section{XML}
+
+All generated classes have canonical XML representations and can be
+marshaled to and from XML using the class abra.tools.Marshaller.  The
+map file(s) can be added to a new instance of the marshaller using the
+\textit{addMapFile} call.
+
+\appendix
+\include{view_appendix}
+
+\end{document}
+
+ 

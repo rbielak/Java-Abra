@@ -1,0 +1,5 @@
+database=;SelectMethod=Cursor
+host=192.168.129.98
+user=rbielak
+password=rbielak
+port=1433

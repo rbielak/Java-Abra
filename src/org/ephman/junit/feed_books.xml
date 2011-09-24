@@ -1,0 +1,39 @@
+<Catalog>
+   <authors ID="1" firstName="Douglas" lastName="Adams" birthday="42">
+         <homeAddress street="The restaurant" city="The End" state="UN" />
+         <workAddress street="somewhere" city="who knows" state="NY" />
+   </authors>
+   <authors ID="2" firstName="Piers" lastName="Anthony" birthday="19781016"/>
+
+   <books ID="3" title="Hitchhikers Guide to the Galaxy" Isbn="42">
+      <author IDREF="1"/>
+   </books>
+
+   <books ID="4" title="A Spell for Chameleon" Isbn="93328">
+      <author IDREF="2"/>
+   </books>
+
+   <books ID="5" title="The source of all magic" Isbn="425532">
+      <author IDREF="2"/>
+      <text>
+public class LargeObjectManager extends Object
+
+java.lang.Object
+
+This class implements the large object interface to PostgreSQL. It provides methods that allow client code to create, open and delete large objects from the database.
+When opening an object, an instance of org.postgresql.largeobject.LargeObject is returned, and its methods then allow access to the object.
+
+This class can only be created by org.postgresql.Connection. To get access to this class, use the following segment of code:
+
+import org.postgresql.largeobject.*;
+Connection  conn;
+LargeObjectManager lobj;
+
+Normally, client code would use the BLOB methods to access large objects. However, sometimes lower level access to Large Objects is required, that is not supported
+by the JDBC specification.
+
+Refer to org.postgresql.largeobject.LargeObject on how to manipulate the contents of a Large Object.
+      </text>
+   </books>
+
+</Catalog>

@@ -1,0 +1,96 @@
+<mapping>
+
+<generator name="org.ephman.abra.tools.generators.PhpGenerator"/>
+
+<property name="p" value="Person"/>
+<property name="personType" value="${gen.pkg}.${p}"/>
+<property name="gen.pkg" value="${pkg}.generated"/>
+<property name="pkg" value="org.ephman.examples.family"/>
+
+<property name="nameRegex" value="[a-zA-Z ./]+" />
+
+<class name="${gen.pkg}.${p}" identity="oid">
+   <map-to table="my_family"/>
+   <description>
+       a person in a family
+    </description>
+<!--	<validate>
+		<if-equals name="foo" value="FI"
+			implies="x,y,z"/>
+	</validate>
+-->
+    <field name="oid" type="integer">
+		<sql name="person_oid" />
+	</field>
+    <field name="firstName" type="string" len="32" >
+        <sql name="first_name"/>
+		<validate regex="${nameRegex}" />
+    </field>
+    <field name="age" type="integer">
+        <sql name="age" constraint=">0" constraint-name="person_age_gt_zero" />
+    </field>
+
+    <field name="birthday" type="date" >
+        <sql name="birthday"/> 
+        <validate required="true"/>
+    </field>
+
+	<field name="address" type="${gen.pkg}.Address" >
+		<sql name="n" inline="true" prefix="address"/>
+    </field>
+
+<!-- links to parents -->
+    <field name="mother" type="${gen.pkg}.Person" >
+        <sql name="mother_oid" constraint-name="person_mother" />
+    </field>
+    <field name="father" type="${personType}" >
+        <sql name="father_oid"/>
+    </field>
+</class>
+
+<class name="${gen.pkg}.DummyStringNameThatIsWayTooLongInJava" identity="oid">
+	<map-to table="dumm_string"/>
+
+  <field name="oid" type="integer">
+	<sql name="d_oid" /> </field>
+
+
+  <field name="dum" type="string" len="16">
+    <sql name="dum_dum"/>
+  </field>
+
+</class>
+
+<class name="${gen.pkg}.Address" identity="oid">
+ <map-to table="foo"/>
+ <php name="user" entry_cols="2" new="false"/>
+ <php name="admin" />
+
+  <field name="oid" type="integer">
+	<sql name="foo_oid"/>
+  </field>
+
+  <field name="street" type="string" len="16">
+    <sql name="street"/>
+    <php format="user" dim="1,1"/>
+    <php format="admin" dim="1"/>
+  </field>
+  <field name="city" type="string" len="16">
+   <sql name="city"/>
+<php format="user" dim="1,2"/>
+    <php format="admin" dim="2"/>
+  </field>
+  <field name="state" type="string" len="2">
+    <sql name="state"/>
+	<validate regex="[a-zA-Z]{2}" name="State Code" code="${pkg}.SystemCodes.INVALID_STATE"/>
+<php format="user" dim="2,1"/>
+    <php format="admin" dim="3"/>
+  </field>
+  <field name="addrConfirmed" type="boolean" >
+   <sql name="add_conf"/>
+    <php format="admin" dim="4"/>
+
+  </field>
+</class>
+
+</mapping>

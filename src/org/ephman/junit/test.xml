@@ -1,0 +1,240 @@
+<!--
+
+	Author: Richie Bielak & Paul Bethe
+	Date: 2002/01/25
+
+	This file contains class definitions needed to run JUnit tests.
+
+	This example models some relationships between Books, Authors and
+	Publishers. Some relationships are simplified in order to
+	create tests of particular kind.
+
+	The model consists of these classes:
+
+	Book - we assume that a book has one author and one publisher.
+		(example of one-to-one relationship)
+
+	Author - can have many books and many publishers
+		(example of one-to-many relationship with Books,
+		and many to many with Publishers)
+
+	Publisher - can have many books
+		(example of one to many relationships)
+
+-->
+<mapping>
+
+<generator name="org.ephman.abra.tools.generators.ValidatorGenerator"/>
+<generator name="org.ephman.abra.tools.generators.XmlMarshalGenerator"/>
+<class-implements implements="java.io.Serializable"/>
+
+<property name="pkg" value="org.ephman.junit"/>
+<property name="gen.pkg" value="${pkg}.generated"/>
+
+<property name="isbn.regex" value="[0-9]*"/>
+
+<class name="${pkg}.generated.Book" identity="oid">
+	<map-to table="db_book"/>
+    <class-view name="${pkg}.generated.EditBook" format="edit"/>
+    <validator name="${pkg}.generated.WeirdBookValidator" format="weird"/>
+
+	<field name="oid" type="integer">
+		<sql name="b_oid"/>
+	</field>
+	<field name="title" type="string" len="80">
+		<sql name="b_title"/>
+        <xml node="attribute"/>
+        <view in="edit"/>
+        <validate required="true" format="weird"/>
+	</field>
+	<field name="author" type="${pkg}.generated.Author">
+		<sql name="b_author"/>
+        <view in="edit" foreign-view="edit"/>
+	</field>
+	<field name="publisher" type="${pkg}.generated.Publisher">
+		<sql name="b_publisher"/>
+	</field>
+	<field name="Isbn" type="string" len="10">
+		<sql name="b_isbn"/>
+        <xml node="attribute"/>
+        <validate regex="${isbn.regex}" />
+	</field>
+    <field name="text" type="longstring">
+        <sql name="b_text"/>
+    </field>
+
+    <index name="title_i">
+       title
+    </index>
+    <index name="author_i">
+       author
+    </index>
+
+</class>
+
+
+<!-- Demonstrate how to use joins as base for factories -->
+<class name="${pkg}.generated.BookData" identity="oid">
+    <!-- Should be map to query
+     select b_oid as bd_oid, b_title as bd_title, a_fname as bd_fname,
+        a_lname as bd_lname from db_book b, db_author a where (a.a_oid = b.b_author)
+    -->
+    <map-to query="select b_oid, b_title, a_fname, a_lname from db_book,db_author where (a_oid = b_author)"/>
+    <field name="oid" type="integer">
+        <sql name="b_oid"/>
+    </field>
+    <field name="title" type="string" len="80">
+        <sql name="b_title"/>
+    </field>
+    <field name="firstName" type="string" len="40">
+        <sql name="a_fname"/>
+    </field>
+    <field name="lastName" type="string" len="40">
+        <sql name="a_lname"/>
+    </field>
+</class>
+
+
+<class name="${pkg}.generated.Poet" identity="oid" extends="${pkg}.generated.Writer">
+	<map-to table="db_poet"/>
+
+    <field name="samplePoem" type="string" len="128">
+       <sql name="po_poem"/>
+    </field>
+</class>
+
+<class name="${pkg}.generated.XMLTest" inline-only="true">
+    <field name="writer" type="${pkg}.generated.Writer"/>
+    <field name="oid" type="integer"/>
+</class>
+
+
+<class name="${pkg}.generated.Author" identity="oid" extends="${pkg}.generated.Writer">
+    <class-view name="${pkg}.generated.EditAuthor" format="edit"/>
+
+	<map-to table="db_author"/>
+
+    <field name="homeAddress" type="${gen.pkg}.Address" >
+           <sql name="hadr" prefix="hadr" inline="true" />
+           <view in="edit" foreign-field="street"/>
+    </field>
+    <field name="workAddress" type="${gen.pkg}.Address" >
+           <sql name="wadr" prefix="wadr" inline="true" />
+           <view in="edit" foreign-view="normal"/>
+    </field>
+</class>
+
+<class name="${pkg}.generated.Writer" identity="oid">
+	<map-to table="db_author"/>
+    <class-view name="${pkg}.generated.EditWriter" format="edit"/>
+
+	<field name="oid" type="integer">
+		<sql name="a_oid"/>
+	</field>
+	<field name="firstName" type="string" len="40">
+		<sql name="a_fname"/>
+        <xml node="attribute"/>
+        <view in="edit"/>
+	</field>
+	<field name="lastName" type="string" len="40">
+		<sql name="a_lname" unique="true"/>
+        <xml node="attribute"/>
+	</field>
+	<field name="birthday" type="date" >
+		<sql name="a_b_day"/>
+		<xml node="attribute" />
+	</field>
+    <field name="warVeteran" type="boolean">
+        <sql name="a_war_vet"/>
+		<xml node="attribute" />
+    </field>
+<!-- war hero is t/f if warVeteran==true but unset otherwise.. -->
+    <field name="warHero" type="Boolean">
+        <sql name="a_war_hero"/>
+		<xml node="attribute" />
+    </field>
+    <field name="salary" type="BigDecimal" len="38,3">
+        <sql name="a_sal" constraint=">=0" constraint-name="auth_sal_ge_zero"/> <!-- test of nativeObjectClasses could be null if unempl -->
+		<xml node="attribute" />
+        
+    </field>
+	<field name="titles" type="${pkg}.generated.Book" collection="vector">
+	</field>
+	<field name="publishers" type="${pkg}.generated.Publisher" collection="array">
+	</field>
+</class>
+
+<class name="${pkg}.generated.Publisher" identity="oid">
+	<map-to table="db_publisher"/>
+
+	<field name="oid" type="integer">
+		<sql name="p_oid"/>
+	</field>
+	<field name="name" type="string" len="40">
+		<sql name="p_name"/>
+	</field>
+	<field name="address" type="string" len="512">
+		<sql name="p_address"/>
+	</field>
+	<field name="titles" type="${pkg}.generated.Book" collection="ArrayList">
+	</field>
+</class>
+
+<!-- This class demonstrates use of transient attributes -->
+<class name="${pkg}.generated.WritingTeam" identity="oid">
+	<map-to table="db_w_team" />
+
+	<field name="oid" type="integer">
+		<sql name="w_oid"/>
+	</field>
+
+	<field name="mastersName" type="string" len="40">
+		<sql name="w_master_name"/>
+	</field>
+
+	<field name="master" type="${pkg}.generated.Author"/>
+
+	<field name="apprenticeName" type="string" len="40">
+		<sql name="w_apprentice_name"/>
+	</field>
+
+	<field name="apprentice" type="${pkg}.generated.Author"/>
+
+
+</class>
+
+
+<class name="${pkg}.generated.Address" identity="oid" inline-only="true">
+   <class-view name="${gen.pkg}.AddrView" format="normal"/>
+   <map-to table="foo"/>
+
+<!-- test for TZ's bug on inline/transient -->
+
+  <field name="transientInline" type="string" len="42">
+     <xml nomarshal="true" />
+  </field>
+
+   <!-- dummy field shouldn't be necessary I will fix soon : PB -->
+  <field name="oid" type="integer">
+	<sql name="foo_oid"/>
+    <xml nomarshal="true" />
+  </field>
+
+  <field name="street" type="string" len="16">
+    <sql name="street"/>
+    <xml node="attribute" />
+    <view in="normal"/>
+  </field>
+  <field name="city" type="string" len="16">
+   <sql name="city"/>
+   <xml node="attribute"/>
+   <view in="normal"/>
+  </field>
+  <field name="state" type="string" len="2">
+    <sql name="state"/>
+	<validate regex="[a-zA-Z]{2}" name="State Code" code="4242"/>
+    <xml node="attribute" />
+  </field>
+</class>
+
+</mapping>
